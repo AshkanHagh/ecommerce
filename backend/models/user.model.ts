@@ -15,6 +15,22 @@ const UserSchema = new Schema({
         type : String,
         minLength : 6,
         required : true
+    },
+    isAdmin : {
+        type : Boolean,
+        default : false
+    },
+    isSeller : {
+        type : Boolean,
+        default : false
+    },
+    token : {
+        type : String,
+        default : ''
+    },
+    tokenExpireDate : {
+        type : Date,
+        default : ''
     }
 
 }, {timestamps : true});

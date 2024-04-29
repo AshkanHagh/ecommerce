@@ -1,10 +1,24 @@
-import { Document, type ObjectId } from 'mongoose';
+import type { request } from 'express';
+import type { Document, Date, ObjectId } from 'mongoose';
+import type { JwtPayload } from 'jsonwebtoken';
+
+declare global {
+    namespace Express {
+        interface Request {
+            user : JwtPayload
+        }
+    }
+}
 
 // User Schema interface
 export interface IUser extends Document {
     fullName : string,
     email : string,
     password : string,
+    isAdmin : boolean,
+    isSeller : boolean,
+    token : string,
+    tokenExpireDate : unknown
 }
 
 // Product Schema Interface

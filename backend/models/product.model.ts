@@ -22,8 +22,17 @@ const ProductSchema = new Schema({
         type : String,
         required : true
     }],
-    color : [{ type : String }],
-    size : [{ type : String }],
+    color : [{ 
+        type : String 
+    }],
+    size : [{ 
+        type : String 
+    }],
+    user : {
+        type : Schema.Types.ObjectId,
+        ref : 'User',
+        required : true
+    },
 
 }, {timestamps : true});
 

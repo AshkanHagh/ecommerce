@@ -1,8 +1,9 @@
-import { type Request, type Response } from 'express';
+import type { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import generateTokenAndSetCookie from '../utils/generateToken';
 
 import User from '../models/user.model';
+import sendEmail from '../utils/email';
 
 export const signup = async (req : Request, res : Response) => {
 
@@ -53,6 +54,8 @@ export const login = async (req : Request, res : Response) => {
         if(!user || !isPasswordMatch) return res.status(400).json({error : 'Invalid email or password'});
 
         generateTokenAndSetCookie(user._id, res);
+
+        // sendEmail({subject : 'Login', text : 'Login was successfully, welcome...', email : user.email});
 
         res.status(200).json({_id : user._id, fullName : user.fullName, email : user.email});
 
