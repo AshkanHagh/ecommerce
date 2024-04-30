@@ -10,7 +10,6 @@ declare global {
     }
 }
 
-// User Schema interface
 export interface IUser extends Document {
     fullName : string
     email : string
@@ -22,7 +21,6 @@ export interface IUser extends Document {
     tokenExpireDate : unknown
 }
 
-// Product Schema Interface
 export interface IProduct extends Document {
     name : string
     price : number
@@ -31,6 +29,7 @@ export interface IProduct extends Document {
     category : string[]
     color : string[]
     size : string[]
+    user : ObjectId
 }
 
 export interface IOrder extends Document {
@@ -50,6 +49,17 @@ export interface ICart extends Document {
         product : ObjectId
         quantity : number
     }[],
+}
+
+export interface ICartDocument extends ICart {
+    products : {
+        product : {
+            name : string,
+            price : number,
+            description : string
+        },
+        quantity : number
+    }[]
 }
 
 export interface IWishList extends Document {

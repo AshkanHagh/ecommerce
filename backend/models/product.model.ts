@@ -15,11 +15,11 @@ const ProductSchema = new Schema({
         required : true
     },
     images : [{
-        type : String,
-        required : true
+        type : String
     }],
     category : [{
         type : String,
+        enum : ['Electronics', 'Books', 'Toys-and-games', 'Sport', 'Apparels', 'Food'],
         required : true
     }],
     color : [{ 

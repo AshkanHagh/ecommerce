@@ -6,6 +6,7 @@ import {v2 as cloudinary} from 'cloudinary';
 import authRouter from './routes/auth.route';
 import roleRouter from './routes/role.route';
 import userRouter from './routes/user.route';
+import productRouter from './routes/product.route';
 
 const app = express();
 const PORT = process.env.PORT || 5500;
@@ -24,5 +25,6 @@ app.use(cookieParser());
 app.use('/api/auth', authRouter);
 app.use('/api/role', roleRouter);
 app.use('/api/user', userRouter);
+app.use('/api/product', productRouter);
 
 app.listen(PORT, () => console.log(`server is running on Port ${PORT}`));
