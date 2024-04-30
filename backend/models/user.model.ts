@@ -16,6 +16,10 @@ const UserSchema = new Schema({
         minLength : 6,
         required : true
     },
+    profilePic : {
+        type : String,
+        default : ''
+    },
     isAdmin : {
         type : Boolean,
         default : false

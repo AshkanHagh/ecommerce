@@ -3,7 +3,7 @@ import { confirmEmail, permissionToAdmin, permissionToSeller } from '../controll
 
 const router = Router();
 
-router.post('/confirm', confirmEmail);
+router.post('/confirm/:query', confirmEmail);
 
 router.put('/admin/:token', permissionToAdmin);
 

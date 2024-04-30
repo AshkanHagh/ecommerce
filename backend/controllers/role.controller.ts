@@ -1,19 +1,19 @@
 import type { Request, Response } from 'express';
-import type { IUser } from '../types';
-import User from '../models/user.model';
 import crypto from 'crypto';
 import sendEmail from '../utils/email';
+import User from '../models/user.model';
+import type { IUser } from '../types';
 
 export const confirmEmail = async (req : Request, res : Response) => {
 
     try {
         const { email } = req.body;
+        const { query } = req.params;
 
         const currentUser : IUser | null = await User.findOne({email}).select('-password');
         if(!currentUser) return res.status(404).json({error : 'User not found'});
         
-        const token = crypto.randomBytes(32).toString('hex');
-        // const token = req.cookies.jwt;
+        const token = crypto.randomBytes(12).toString('hex');
 
         currentUser.token = token;
         currentUser.tokenExpireDate = Date.now() + 3600000;
@@ -22,7 +22,7 @@ export const confirmEmail = async (req : Request, res : Response) => {
 
         sendEmail({email : currentUser.email.toString(), subject : 'Confirm Email', text : 'please confirm your email', html : `
             <p>Confirm Your Email</p>
-            <p>Click <a href="http://localhost:5000/api/role/admin/${token}">here</a></p>
+            <p>Click <a href="http://localhost:5000/api/role/${query}/${token}">here</a></p>
         `});
 
         res.status(200).json({message : 'Email sended please check your email'});
@@ -48,6 +48,8 @@ export const permissionToAdmin = async (req : Request, res : Response) => {
         if(!user) return res.status(401).json({error : 'Token is not valid'});
 
         user.isAdmin = true
+        user.token = null;
+        user.tokenExpireDate = null;
 
         await user.save();
 
@@ -74,6 +76,8 @@ export const permissionToSeller = async (req : Request, res : Response) => {
         if(!user) return res.status(401).json({error : 'Token is not valid'});
 
         user.isSeller = true;
+        user.token = null;
+        user.tokenExpireDate = null;
 
         await user.save()
 

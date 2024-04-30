@@ -1,24 +1,24 @@
 import type { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import generateTokenAndSetCookie from '../utils/generateToken';
-
 import User from '../models/user.model';
-import sendEmail from '../utils/email';
+import type { IUser } from '../types';
 
 export const signup = async (req : Request, res : Response) => {
 
     try {
         const { fullName, email, password, confirmPassword } = req.body;
 
-        const isExists = await User.findOne({email});
+        const existingEmail : IUser | null = await User.findOne({email});
 
-        if(isExists) return res.status(400).json({error : 'User already exists'});
+        if(existingEmail) return res.status(400).json({error : 'User already exists'});
+
         if(password !== confirmPassword) return res.status(400).json({error : 'Password dose not match'});
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const user = new User({
+        const user : IUser | null = new User({
             fullName,
             email,
             password : hashedPassword
@@ -48,7 +48,7 @@ export const login = async (req : Request, res : Response) => {
     try {
         const { email, password } = req.body;
 
-        const user = await User.findOne({email});
+        const user : IUser | null = await User.findOne({email});
         const isPasswordMatch = await bcrypt.compare(password, user?.password || '');
 
         if(!user || !isPasswordMatch) return res.status(400).json({error : 'Invalid email or password'});

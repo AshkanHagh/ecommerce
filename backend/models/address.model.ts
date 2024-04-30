@@ -35,4 +35,4 @@ const AddressSchema = new Schema({
 
 const Address = model<IAddress>('Address', AddressSchema);
 
-export default Schema;
+export default Address;
