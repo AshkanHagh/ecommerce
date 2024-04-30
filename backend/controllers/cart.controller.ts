@@ -82,9 +82,9 @@ export const getCart = async (req : Request, res : Response) => {
 
         const cart : ICartDocument = await Cart.findOne({user : userId}).populate({
             path : 'products',
-            populate: {
-                path: 'product',
-                model: 'Product'
+            populate : {
+                path : 'product',
+                model : 'Product'
             }
         }).select('products');        
 
@@ -96,7 +96,6 @@ export const getCart = async (req : Request, res : Response) => {
                 description : product.product.description,
                 quantity: product.quantity
             };
-
         });        
 
         res.status(200).json(mappedCart);

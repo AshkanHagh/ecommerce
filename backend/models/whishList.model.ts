@@ -12,12 +12,11 @@ const WishListSchema = new Schema({
             type : Schema.Types.ObjectId,
             ref : 'Product',
             required : true
-        },
-        quantity : { type : Number }
+        }
     }]
 
 }, {timestamps : true});
 
-const WishList = model<IWishList>('Cart', WishListSchema);
+const WishList = model<IWishList>('WishList', WishListSchema);
 
 export default WishList;

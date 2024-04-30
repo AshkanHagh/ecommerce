@@ -65,7 +65,7 @@ export const products = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in getProduct controller :', error);
+        console.log('error in products controller :', error);
 
         res.status(500).json({error : 'Internal server error'});
     }
@@ -85,7 +85,7 @@ export const singleProduct = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in getProduct controller :', error);
+        console.log('error in singleProduct controller :', error);
 
         res.status(500).json({error : 'Internal server error'});
     }
@@ -105,7 +105,7 @@ export const getProductWithCategory = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in getProduct controller :', error);
+        console.log('error in getProductWithCategory controller :', error);
 
         res.status(500).json({error : 'Internal server error'});
     }
