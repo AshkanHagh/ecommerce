@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import Product from '../models/product.model';
-import type { IProduct } from '../types';
+import type { IPagination, IProduct } from '../types';
 
 export const newProduct = async (req : Request, res : Response) => {
 
@@ -10,7 +10,8 @@ export const newProduct = async (req : Request, res : Response) => {
 
         const newProduct : IProduct | null = new Product({
             name, price, description, category, color, size,
-            user : userId
+            user : userId,
+            images : req.images
         });
 
         await newProduct.save();
@@ -54,11 +55,34 @@ export const searchProduct = async (req : Request, res : Response) => {
 export const products = async (req : Request, res : Response) => {
 
     try {
-        const products : IProduct[] | null = await Product.find().select('-updatedAt -__v');
+        const { page, limit } = req.query;
+
+        const startIndex = (Number(page) -1) * Number(limit);
+        const endIndex = Number(page) * Number(limit);
+
+        const results = <IPagination>{}
+
+        if(endIndex < await Product.countDocuments().exec()) {
+
+            results.next = {
+                page : Number(page) + 1,
+                limit : Number(limit)
+            }
+        }
+
+        if(startIndex > 0) {
+            
+            results.previous = {
+                page : Number(page) - 1,
+                limit : Number(limit)
+            }
+        }
+
+        results.result = await Product.find().select('-updatedAt -__v').limit(Number(limit)).skip(startIndex);
 
         if(!products) return res.status(404).json({error : 'Product not found'});
 
-        res.status(200).json(products);
+        res.status(200).json(results);
 
     } catch (error) {
         

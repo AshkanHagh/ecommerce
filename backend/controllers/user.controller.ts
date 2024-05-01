@@ -1,6 +1,5 @@
 import type { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-import { v2 as cloudinary } from "cloudinary";
 import User from '../models/user.model';
 import Address from '../models/address.model';
 import type { IAddress, IUser } from '../types';
@@ -47,18 +46,8 @@ export const updateProfile = async (req : Request, res : Response) => {
             currentUser.password = hashedPassword;
         }
 
-        if(profilePic) {
-            if (currentUser.profilePic) {
-				await cloudinary.uploader.destroy(currentUser.profilePic.split("/").pop().split(".")[0]);
-			}
-
-            const uploadResponse = await cloudinary.uploader.upload(profilePic);
-            return profilePic = uploadResponse.secure_url;
-        }
-
         currentUser.fullName = fullName || currentUser.fullName;
         currentUser.email = email || currentUser.email;
-        currentUser.profilePic = profilePic || currentUser.profilePic;
 
         await currentUser.save();
 

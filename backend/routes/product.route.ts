@@ -4,6 +4,7 @@ import confirmPermission from '../middlewares/permission';
 import { products, newProduct, searchProduct, singleProduct, getProductWithCategory } from '../controllers/product.controller';
 import { addToCart, getCart, newOrder, orderDetail, removeCart } from '../controllers/cart.controller';
 import { addToWishList, getWishList, removeWishList } from '../controllers/wishList.controller';
+import { uploadFile } from '../middlewares/upload';
 
 const router = Router();
 
@@ -30,7 +31,7 @@ router.get('/order/:id', protectRoute, orderDetail);
 
 
 // product route
-router.post('/new', [protectRoute, confirmPermission], newProduct);
+router.post('/new', [protectRoute, confirmPermission, uploadFile], newProduct);
 
 router.get('/search/:query', searchProduct);
 

@@ -6,6 +6,7 @@ declare global {
     namespace Express {
         interface Request {
             user : JwtPayload
+            images : any
         }
     }
 }
@@ -93,4 +94,16 @@ export interface IAddress extends Document {
     state : string
     country : string
     postalCode : string
+}
+
+export interface IPagination {
+    next : {
+        page : number
+        limit : number
+    }
+    previous : {
+        page : number
+        limit : number
+    }
+    result : object
 }
