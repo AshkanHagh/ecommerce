@@ -34,13 +34,19 @@ export interface IProduct extends Document {
 
 export interface IOrder extends Document {
     user : ObjectId
-    products : {
-        product : ObjectId
-        quantity : number
-    }[],
-    totalPrice : number
+    products : ObjectId[]
+    totalPrice? : number
     status : string
     address : ObjectId
+}
+
+export interface IOrderDocument extends IOrder {
+    products : {
+        name : string
+        price : number
+        description : string
+        images : string
+    }[]
 }
 
 export interface ICart extends Document {

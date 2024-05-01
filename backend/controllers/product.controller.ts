@@ -1,7 +1,4 @@
 import type { Request, Response } from 'express';
-import User from '../models/user.model';
-import Address from '../models/address.model';
-import Order from '../models/order.model';
 import Product from '../models/product.model';
 import type { IProduct } from '../types';
 

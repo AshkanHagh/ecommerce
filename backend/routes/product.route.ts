@@ -2,7 +2,7 @@ import { Router } from 'express';
 import protectRoute from '../middlewares/protectRoute';
 import confirmPermission from '../middlewares/permission';
 import { products, newProduct, searchProduct, singleProduct, getProductWithCategory } from '../controllers/product.controller';
-import { addToCart, getCart, removeCart } from '../controllers/cart.controller';
+import { addToCart, getCart, newOrder, orderDetail, removeCart } from '../controllers/cart.controller';
 import { addToWishList, getWishList, removeWishList } from '../controllers/wishList.controller';
 
 const router = Router();
@@ -21,6 +21,12 @@ router.post('/wishList', protectRoute, addToWishList);
 router.delete('/wishList', protectRoute, removeWishList);
 
 router.get('/wishList', protectRoute, getWishList);
+
+
+// order route
+router.post('/order', protectRoute, newOrder);
+
+router.get('/order/:id', protectRoute, orderDetail);
 
 
 // product route
