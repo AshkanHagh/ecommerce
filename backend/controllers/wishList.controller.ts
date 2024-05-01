@@ -11,7 +11,7 @@ export const addToWishList = async (req : Request, res : Response) => {
         let wishList : IWishList | null = await WishList.findOne({user : userId});
 
         if(!wishList) {
-            wishList = await WishList.create({user : userId, products : []});
+            wishList = await WishList.create({user : userId});
         }
 
         if(wishList.products.find(item => item.product.toString() === productId)) 

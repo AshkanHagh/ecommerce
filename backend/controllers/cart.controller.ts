@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import Cart from '../models/cart.model';
-import type { ICart, ICartDocument, IProduct } from '../types';
+import WishList from '../models/whishList.model';
+import type { ICart, ICartDocument, IWishList } from '../types';
 
 export const addToCart = async (req : Request, res : Response) => {
 
@@ -9,12 +10,12 @@ export const addToCart = async (req : Request, res : Response) => {
         const userId = req.user._id;
 
         let cart : ICart | null = await Cart.findOne({user : userId});
+        await WishList.findOneAndUpdate({user : userId}, {
+            $pull : {products : {product : productId}}
+        });
 
         if(!cart) {
-            cart = await Cart.create({
-                user : userId,
-                products : []
-            });
+            cart = await Cart.create({user : userId});
         }
 
         const existingProduct = cart.products.findIndex(item => item.product.toString() === productId);
