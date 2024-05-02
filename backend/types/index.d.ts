@@ -31,6 +31,7 @@ export interface IProduct extends Document {
     color : string[]
     size : string[]
     user : ObjectId
+    availableProductQuantity : Number
 }
 
 export interface IOrder extends Document {
@@ -61,6 +62,7 @@ export interface ICart extends Document {
 export interface ICartDocument extends ICart {
     products : {
         product : {
+            _id? : ObjectId
             name : string,
             price : number,
             description : string
@@ -106,4 +108,9 @@ export interface IPagination {
         limit : number
     }
     result : object
+}
+
+export interface IInventory extends Document {
+    productId : ObjectId
+    availableQuantity : number
 }

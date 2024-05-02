@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import protectRoute from '../middlewares/protectRoute';
 import confirmPermission from '../middlewares/permission';
-import { products, newProduct, searchProduct, singleProduct, getProductWithCategory } from '../controllers/product.controller';
+import { products, newProduct, searchProduct, singleProduct, editProduct } from '../controllers/product.controller';
 import { addToCart, getCart, newOrder, orderDetail, removeCart } from '../controllers/cart.controller';
 import { addToWishList, getWishList, removeWishList } from '../controllers/wishList.controller';
 import { uploadFile } from '../middlewares/upload';
@@ -39,7 +39,7 @@ router.get('/', products);
 
 router.get('/:id', singleProduct);
 
-router.get('/category/:category', getProductWithCategory);
+router.put('/update/:id', [protectRoute, confirmPermission], editProduct);
 
 
 

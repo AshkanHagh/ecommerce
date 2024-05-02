@@ -1,9 +1,9 @@
 import type { Request, Response } from 'express';
 import Cart from '../models/cart.model';
 import WishList from '../models/whishList.model';
-import Address from '../models/address.model';
 import Order from '../models/order.model';
-import type { ICart, ICartDocument, IOrderDocument } from '../types';
+import Inventory from '../models/inventory.model';
+import type { ICart, ICartDocument, IOrder, IOrderDocument } from '../types';
 
 export const addToCart = async (req : Request, res : Response) => {
 
@@ -117,21 +117,25 @@ export const getCart = async (req : Request, res : Response) => {
 export const newOrder = async (req : Request, res : Response) => {
 
     try {
-        const { products: cartId, addressId } = req.body;
-        const userId = req.user._id;
 
-        const cart = await Cart.findById(cartId).populate('products.product');
+        const { cartId, addressId } = req.body;
+        const userId = req.user._id
 
-        if(!cart) return res.status(404).json({ error: 'Cart not found' });
+        const cart : ICartDocument | null = await Cart.findById(cartId).populate('products.product');
 
-        const address = await Address.findById(addressId);
-
-        if (!address) return res.status(404).json({ error: 'Address not found' });
+        if(!cart) return res.status(404).json({error : 'Cart not found'});
 
         let totalPrice = 0;
-        cart.products.forEach((item: any) => {
+
+        for (const item of cart.products) {
             totalPrice += item.product.price * item.quantity;
-        });
+
+            const inventory = await Inventory.findOne({productId : item.product._id});
+            if(!inventory) return res.status(404).json({error : 'Inventory not found'});
+
+            if(inventory.availableQuantity === 0 || inventory.availableQuantity < item.quantity) 
+                return res.status(400).json({error : 'Not enough available products'});
+        }
 
         const order = new Order({
             user: userId,
@@ -143,17 +147,25 @@ export const newOrder = async (req : Request, res : Response) => {
 
         await order.save();
 
-        const updatedCart = await Cart.findByIdAndUpdate(cartId, {
+        await Cart.findByIdAndUpdate(cartId, {
             $pull : {products : {product : order.products}}
         });
 
-        res.status(201).json({ message: 'Order created successfully'});
+        for (const item of cart.products) {
 
+            const inventory = await Inventory.findOne({productId : item.product._id});
+            inventory.availableQuantity -= item.quantity;
+
+            await inventory.save();
+        }
+
+        res.status(200).json({message: 'Order placed successfully'});
+        
     } catch (error) {
         
-        console.error('Error creating order:', error);
+        console.log('error in newOrder controller :', error);
 
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({error : 'Internal server error'});
     }
 
 }
@@ -184,9 +196,34 @@ export const orderDetail = async (req : Request, res : Response) => {
 
     } catch (error) {
 
-        console.error('Error fetching order:', error);
+        console.log('error in orderDetail controller :', error);
 
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({error : 'Internal server error'});
+    }
+
+}
+
+export const updateOrder = async (req : Request, res : Response) => {
+
+    try {
+        const { id: orderId } = req.params;
+        const { status } = req.body;
+
+        const order : IOrder | null = await Order.findById(orderId);
+
+        if(!order) return res.status(404).json({error : 'Order not found'});
+
+        order.status = status;
+
+        await order.save();
+
+        res.status(200).json({message : 'Order Updated', status : order.status});
+
+    } catch (error) {
+        
+        console.log('error in updateOrder controller :', error);
+
+        res.status(500).json({error : 'Internal server error'});
     }
 
 }

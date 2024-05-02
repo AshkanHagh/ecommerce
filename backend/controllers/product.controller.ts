@@ -1,11 +1,12 @@
 import type { Request, Response } from 'express';
 import Product from '../models/product.model';
-import type { IPagination, IProduct } from '../types';
+import type { IInventory, IPagination, IProduct } from '../types';
+import Inventory from '../models/inventory.model';
 
 export const newProduct = async (req : Request, res : Response) => {
 
     try {
-        const { name, price, description, category, color, size } = req.body;
+        const { name, price, description, category, color, size, availableQuantity } = req.body;
         const userId : string = req.user._id;
 
         const newProduct : IProduct | null = new Product({
@@ -14,7 +15,12 @@ export const newProduct = async (req : Request, res : Response) => {
             // images : req.images
         });
 
-        await newProduct.save();
+        const available : IInventory = new Inventory({
+            productId : newProduct._id,
+            availableQuantity
+        });
+
+        await Promise.all([newProduct.save(), available.save()]);
 
         res.status(201).json(newProduct);
 
@@ -100,6 +106,8 @@ export const singleProduct = async (req : Request, res : Response) => {
 
         const products : IProduct | null = await Product.findById(productId).select('-updatedAt -__v');
 
+        if(products.availableProductQuantity === 0) return res.status(404).json({error : 'The product is not available in stock'}); 
+
         if(!products) return res.status(404).json({error : 'Product not found'});
 
         res.status(200).json(products);
@@ -113,24 +121,37 @@ export const singleProduct = async (req : Request, res : Response) => {
 
 }
 
-export const getProductWithCategory = async (req : Request, res : Response) => {
+export const editProduct = async (req : Request, res : Response) => {
 
     try {
-        const { category } = req.params;
+        const { name, price, description, category, color, size, availableQuantity } = req.body;
+        const { id: productId } = req.params;
+        const ownerId = req.user._id;
 
-        const products : IProduct[] | null = await Product.find({ category : category }).select('-updatedAt -__v');
+        const product = await Product.findById(productId);
 
-        if(!products) return res.status(404).json({error : 'Product not found'});
+        if(product.user.toString() !== ownerId.toString()) return res.status(401).json({error : 'Access denied - cannot edit others products'});
 
-        res.status(200).json(products);
+        product.name = name || product.name;
+        product.price = price || product.price;
+        product.description = description || product.description;
+        product.category = category || product.category;
+        product.color = color || product.color;
+        product.size = size || product.size;
+
+        const available : IInventory = await Inventory.findOne({productId : product._id});
+
+        available.availableQuantity = availableQuantity || available.availableQuantity;
+
+        await Promise.all([product.save(), available.save()]);
+
+        res.status(200).json(product);
 
     } catch (error) {
         
-        console.log('error in getProductWithCategory controller :', error);
+        console.log('error in editProduct controller :', error);
 
         res.status(500).json({error : 'Internal server error'});
     }
 
 }
-
-export const editProduct = await products
