@@ -11,7 +11,7 @@ export const newProduct = async (req : Request, res : Response) => {
         const newProduct : IProduct | null = new Product({
             name, price, description, category, color, size,
             user : userId,
-            images : req.images
+            // images : req.images
         });
 
         await newProduct.save();
@@ -30,7 +30,7 @@ export const newProduct = async (req : Request, res : Response) => {
 export const searchProduct = async (req : Request, res : Response) => {
 
     try {
-        const { query } = req.body;
+        const { query } = req.params;
 
         const product : IProduct[] | null = await Product.find({
             $or : [
@@ -132,3 +132,5 @@ export const getProductWithCategory = async (req : Request, res : Response) => {
     }
 
 }
+
+export const editProduct = await products

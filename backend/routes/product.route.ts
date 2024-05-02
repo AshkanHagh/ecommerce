@@ -31,7 +31,7 @@ router.get('/order/:id', protectRoute, orderDetail);
 
 
 // product route
-router.post('/new', [protectRoute, confirmPermission, uploadFile], newProduct);
+router.post('/new', [protectRoute, confirmPermission], newProduct);
 
 router.get('/search/:query', searchProduct);
 

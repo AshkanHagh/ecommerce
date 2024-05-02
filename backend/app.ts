@@ -17,7 +17,7 @@ connectDB();
 app.use(express.json());
 app.use(express.urlencoded({ extended : true }));
 app.use(cookieParser());
-app.use(upload);
+// app.use(upload);
 
 app.use('/api/auth', authRouter);
 app.use('/api/role', roleRouter);
