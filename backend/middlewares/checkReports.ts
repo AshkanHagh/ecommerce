@@ -9,6 +9,8 @@ export const checkReport = async (req : Request, res : Response, next : NextFunc
         let userToModify : IUser | null = await User.findById(req.user._id);
         const reports : IReport | null = await Report.findOne({user : userToModify._id});
 
+        if(userToModify.isBan) return res.status(403).json({error : 'This account has been banned please contact with admins'});
+
         if(reports && reports.reportersId.length >= 12) {
 
             userToModify.isBan = true;
