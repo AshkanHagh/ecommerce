@@ -8,7 +8,8 @@ import authRouter from './routes/auth.route';
 import roleRouter from './routes/role.route';
 import userRouter from './routes/user.route';
 import productRouter from './routes/product.route';
-import { upload } from './utils/multer';
+import adminRouter from './routes/admin.route';
+// import { upload } from './utils/multer';
 
 const app = express();
 const PORT = process.env.PORT || 5500;
@@ -23,5 +24,6 @@ app.use('/api/auth', authRouter);
 app.use('/api/role', roleRouter);
 app.use('/api/user', userRouter);
 app.use('/api/product', productRouter);
+app.use('/api/admin', adminRouter);
 
 app.listen(PORT, () => console.log(`server is running on Port ${PORT}`));

@@ -18,6 +18,7 @@ export interface IUser extends Document {
     profilePic : string
     isAdmin : boolean
     isSeller : boolean
+    isBan : boolean
     token : string
     tokenExpireDate : unknown
 }
@@ -113,4 +114,9 @@ export interface IPagination {
 export interface IInventory extends Document {
     productId : ObjectId
     availableQuantity : number
+}
+
+export interface IReport extends Document {
+    user : ObjectId
+    reportersId : ObjectId[]
 }

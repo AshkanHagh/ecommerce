@@ -35,6 +35,10 @@ const UserSchema = new Schema({
     tokenExpireDate : {
         type : Date,
         default : ''
+    },
+    isBan : {
+        type : Boolean,
+        default : false
     }
 
 }, {timestamps : true});

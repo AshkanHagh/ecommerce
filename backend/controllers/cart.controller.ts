@@ -3,7 +3,7 @@ import Cart from '../models/cart.model';
 import WishList from '../models/whishList.model';
 import Order from '../models/order.model';
 import Inventory from '../models/inventory.model';
-import type { ICart, ICartDocument, IOrder, IOrderDocument } from '../types';
+import type { ICart, ICartDocument, IInventory, IOrder, IOrderDocument } from '../types';
 
 export const addToCart = async (req : Request, res : Response) => {
 
@@ -153,7 +153,7 @@ export const newOrder = async (req : Request, res : Response) => {
 
         for (const item of cart.products) {
 
-            const inventory = await Inventory.findOne({productId : item.product._id});
+            const inventory : IInventory | null = await Inventory.findOne({productId : item.product._id});
             inventory.availableQuantity -= item.quantity;
 
             await inventory.save();

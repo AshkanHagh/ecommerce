@@ -63,28 +63,19 @@ export const products = async (req : Request, res : Response) => {
     try {
         const { page, limit } = req.query;
 
-        const startIndex = (Number(page) -1) * Number(limit);
-        const endIndex = Number(page) * Number(limit);
+        const NPage = Number(page);
+        const NLimit = Number(limit);
+
+        const startIndex = (NPage -1) * NLimit;
+        const endIndex = NPage * NLimit;
 
         const results = <IPagination>{}
 
-        if(endIndex < await Product.countDocuments().exec()) {
+        if(endIndex < await Product.countDocuments().exec()) results.next = { page : NPage + 1, limit : NLimit }
 
-            results.next = {
-                page : Number(page) + 1,
-                limit : Number(limit)
-            }
-        }
+        if(startIndex > 0) results.previous = { page : NPage - 1, limit : NLimit }
 
-        if(startIndex > 0) {
-            
-            results.previous = {
-                page : Number(page) - 1,
-                limit : Number(limit)
-            }
-        }
-
-        results.result = await Product.find().select('-updatedAt -__v').limit(Number(limit)).skip(startIndex);
+        results.result = await Product.find().select('-updatedAt -__v').limit(NLimit).skip(startIndex);
 
         if(!products) return res.status(404).json({error : 'Product not found'});
 
