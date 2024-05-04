@@ -1,9 +1,9 @@
-import type { Request, Response } from 'express';
-import Product from '../models/product.model';
-import type { IInventory, IPagination, IProduct } from '../types';
-import Inventory from '../models/inventory.model';
+import type { NextFunction, Request, Response } from 'express';
+import Product from '../../models/shop/product.model';
+import type { IInventory, IPagination, IProduct } from '../../types';
+import Inventory from '../../models/shop/inventory.model';
 
-export const newProduct = async (req : Request, res : Response) => {
+export const newProduct = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { name, price, description, category, color, size, availableQuantity } = req.body;
@@ -26,14 +26,12 @@ export const newProduct = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in newProduct controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const searchProduct = async (req : Request, res : Response) => {
+export const searchProduct = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { query } = req.params;
@@ -51,14 +49,12 @@ export const searchProduct = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in newProduct controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const products = async (req : Request, res : Response) => {
+export const products = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { page, limit } = req.query;
@@ -83,14 +79,12 @@ export const products = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in products controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const singleProduct = async (req : Request, res : Response) => {
+export const singleProduct = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { id: productId } = req.params;
@@ -105,14 +99,12 @@ export const singleProduct = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in singleProduct controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const editProduct = async (req : Request, res : Response) => {
+export const editProduct = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { name, price, description, category, color, size, availableQuantity } = req.body;
@@ -140,9 +132,7 @@ export const editProduct = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in editProduct controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }

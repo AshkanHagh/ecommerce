@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
-import type { ICart } from '../types';
+import type { IWishList } from '../../types';
 
-const CartSchema = new Schema({
+const WishListSchema = new Schema({
     user : {
         type : Schema.Types.ObjectId,
         ref : 'User',
@@ -13,15 +13,11 @@ const CartSchema = new Schema({
             ref : 'Product',
             required : true
         },
-        quantity : {
-            type : Number,
-            default : 1
-        },
         default : []
     }]
 
 }, {timestamps : true});
 
-const Cart = model<ICart>('Cart', CartSchema);
+const WishList = model<IWishList>('WishList', WishListSchema);
 
-export default Cart;
+export default WishList;

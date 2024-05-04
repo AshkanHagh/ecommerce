@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import type { IInventory } from '../types';
+import type { IInventory } from '../../types';
 
 const InventorySchema = new Schema({
     productId: {

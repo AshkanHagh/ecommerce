@@ -15,22 +15,22 @@ export interface IUser extends Document {
     fullName : string
     email : string
     password : string
-    profilePic : string
-    isAdmin : boolean
-    isSeller : boolean
-    isBan : boolean
-    token : string
-    tokenExpireDate : unknown
+    profilePic? : string
+    isAdmin? : boolean
+    isSeller? : boolean
+    isBan? : boolean
+    token? : string
+    tokenExpireDate? : unknown
 }
 
 export interface IProduct extends Document {
     name : string
     price : number
     description : string
-    images : string[]
+    images? : string[]
     category : string[]
     color : string[]
-    size : string[]
+    size? : string[]
     user : ObjectId
     availableProductQuantity : Number
 }

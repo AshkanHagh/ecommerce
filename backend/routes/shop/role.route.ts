@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { confirmEmail, permissionToAdmin, permissionToSeller } from '../controllers/role.controller';
+import { confirmEmail, permissionToAdmin, permissionToSeller } from '../../controllers/role.controller';
 
 const router = Router();
 

@@ -1,8 +1,8 @@
-import type { Request, Response } from 'express';
-import WishList from '../models/whishList.model';
-import type { IWishList, IWishListDocument } from '../types';
+import type { NextFunction, Request, Response } from 'express';
+import WishList from '../../models/shop/whishList.model';
+import type { IWishList, IWishListDocument } from '../../types';
 
-export const addToWishList = async (req : Request, res : Response) => {
+export const addToWishList = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { productId } = req.body;
@@ -25,14 +25,12 @@ export const addToWishList = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in addToWishList controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const removeWishList = async (req : Request, res : Response) => {
+export const removeWishList = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { productId } = req.body;
@@ -50,14 +48,12 @@ export const removeWishList = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in removeWishList controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const getWishList = async (req : Request, res : Response) => {
+export const getWishList = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const userId = req.user._id;
@@ -85,9 +81,7 @@ export const getWishList = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in getWishList controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }

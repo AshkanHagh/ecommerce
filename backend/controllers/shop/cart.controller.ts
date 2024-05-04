@@ -1,11 +1,11 @@
-import type { Request, Response } from 'express';
-import Cart from '../models/cart.model';
-import WishList from '../models/whishList.model';
-import Order from '../models/order.model';
-import Inventory from '../models/inventory.model';
-import type { ICart, ICartDocument, IInventory, IOrder, IOrderDocument } from '../types';
+import type { NextFunction, Request, Response } from 'express';
+import Cart from '../../models/shop/cart.model';
+import WishList from '../../models/shop/whishList.model';
+import Order from '../../models/shop/order.model';
+import Inventory from '../../models/shop/inventory.model';
+import type { ICart, ICartDocument, IInventory, IOrder, IOrderDocument } from '../../types';
 
-export const addToCart = async (req : Request, res : Response) => {
+export const addToCart = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { productId, quantity } = req.body;
@@ -36,14 +36,12 @@ export const addToCart = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in addToCart controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const removeCart = async (req : Request, res : Response) => {
+export const removeCart = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { productId } = req.body;
@@ -72,14 +70,12 @@ export const removeCart = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in removeCart controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const getCart = async (req : Request, res : Response) => {
+export const getCart = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const userId = req.user._id;
@@ -107,14 +103,12 @@ export const getCart = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in getCart controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const newOrder = async (req : Request, res : Response) => {
+export const newOrder = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
 
@@ -163,14 +157,12 @@ export const newOrder = async (req : Request, res : Response) => {
         
     } catch (error) {
         
-        console.log('error in newOrder controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const orderDetail = async (req : Request, res : Response) => {
+export const orderDetail = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const orderId = req.params.id;
@@ -196,14 +188,12 @@ export const orderDetail = async (req : Request, res : Response) => {
 
     } catch (error) {
 
-        console.log('error in orderDetail controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const updateOrder = async (req : Request, res : Response) => {
+export const updateOrder = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { id: orderId } = req.params;
@@ -221,9 +211,7 @@ export const updateOrder = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in updateOrder controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }

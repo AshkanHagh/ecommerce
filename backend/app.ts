@@ -5,10 +5,11 @@ import multer from 'multer';
 import path from 'path';
 
 import authRouter from './routes/auth.route';
-import roleRouter from './routes/role.route';
+import roleRouter from './routes/shop/role.route';
 import userRouter from './routes/user.route';
-import productRouter from './routes/product.route';
+import productRouter from './routes/shop/product.route';
 import adminRouter from './routes/admin.route';
+import errorHandler from './middlewares/errorHandler';
 // import { upload } from './utils/multer';
 
 const app = express();
@@ -25,5 +26,7 @@ app.use('/api/role', roleRouter);
 app.use('/api/user', userRouter);
 app.use('/api/product', productRouter);
 app.use('/api/admin', adminRouter);
+
+app.use(errorHandler);
 
 app.listen(PORT, () => console.log(`server is running on Port ${PORT}`));

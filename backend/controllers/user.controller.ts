@@ -1,10 +1,10 @@
-import type { Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
 import User from '../models/user.model';
-import Address from '../models/address.model';
+import Address from '../models/shop/address.model';
 import type { IAddress, IUser } from '../types';
 
-export const userProfile = async (req : Request, res : Response) => {
+export const userProfile = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const userId : string = req.user._id;
@@ -19,14 +19,12 @@ export const userProfile = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in getProfile controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const updateProfile = async (req : Request, res : Response) => {
+export const updateProfile = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { fullName, email, password } = req.body;
@@ -59,14 +57,12 @@ export const updateProfile = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in updateProfile controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const updateAddress = async (req : Request, res : Response) => {
+export const updateAddress = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { addressLine1, addressLine2, city, state, country, postalCode } = req.body;
@@ -102,9 +98,7 @@ export const updateAddress = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in updateAddress controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }

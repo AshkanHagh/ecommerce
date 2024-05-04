@@ -1,10 +1,10 @@
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import generateTokenAndSetCookie from '../utils/generateToken';
 import User from '../models/user.model';
 import type { IUser } from '../types';
 
-export const signup = async (req : Request, res : Response) => {
+export const signup = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { fullName, email, password, confirmPassword } = req.body;
@@ -36,14 +36,12 @@ export const signup = async (req : Request, res : Response) => {
         
     } catch (error) {
         
-        console.log('error in signup controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const login = async (req : Request, res : Response) => {
+export const login = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { email, password } = req.body;
@@ -61,14 +59,12 @@ export const login = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in login controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const logout = async (req : Request, res : Response) => {
+export const logout = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         res.cookie('jwt', '', {maxAge : 1});
@@ -77,9 +73,7 @@ export const logout = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in logout controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }

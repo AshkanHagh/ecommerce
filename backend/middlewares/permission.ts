@@ -9,7 +9,7 @@ export const confirmPermission = async (req : Request, res : Response, next : Ne
         if(user.isSeller || user.isAdmin) {
             next();
         }else {
-            res.status(401).json({error : 'Access dined'});
+            res.status(403).json({error : 'Access dined'});
         }
 
     } catch (error) {
@@ -29,7 +29,7 @@ export const adminPermission = async (req : Request, res : Response, next : Next
         if(user.isAdmin) {
             next();
         }else {
-            res.status(401).json({error : 'Access dined'});
+            res.status(403).json({error : 'Access dined'});
         }
 
     } catch (error) {

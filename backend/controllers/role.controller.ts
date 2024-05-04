@@ -1,10 +1,10 @@
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import crypto from 'crypto';
 import sendEmail from '../utils/email';
 import User from '../models/user.model';
 import type { IUser } from '../types';
 
-export const confirmEmail = async (req : Request, res : Response) => {
+export const confirmEmail = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { email } = req.body;
@@ -29,14 +29,12 @@ export const confirmEmail = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in confirmEmail controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const permissionToAdmin = async (req : Request, res : Response) => {
+export const permissionToAdmin = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { token } = req.params;
@@ -57,14 +55,12 @@ export const permissionToAdmin = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in permissionToAdmin controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
 
-export const permissionToSeller = async (req : Request, res : Response) => {
+export const permissionToSeller = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { token } = req.params;
@@ -85,9 +81,7 @@ export const permissionToSeller = async (req : Request, res : Response) => {
 
     } catch (error) {
         
-        console.log('error in permissionToSeller controller :', error);
-
-        res.status(500).json({error : 'Internal server error'});
+        next(error);
     }
 
 }
