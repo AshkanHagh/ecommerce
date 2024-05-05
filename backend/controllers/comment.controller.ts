@@ -9,7 +9,7 @@ export const newComment = async (req : Request, res : Response, next : NextFunct
         const { id: productId } = req.params;
         const userId = req.user._id;
 
-        const comment = new Comment({productId, text});
+        const comment : IComment | null = new Comment({productId, text});
 
         comment.senderId.push(userId);
 
@@ -58,7 +58,7 @@ export const editComment = async (req : Request, res : Response, next : NextFunc
         const { id: commentId } = req.params;
         const currentUser = req.user._id;
 
-        const comment = await Comment.findById(commentId);
+        const comment : IComment | null = await Comment.findById(commentId);
 
         if(comment.senderId.toString() !== currentUser.toString()) return res.status(400).json({error : 'Cannot edit others comment'});
 
@@ -81,7 +81,7 @@ export const deleteComment = async (req : Request, res : Response, next : NextFu
         const { id: commentId } = req.params;
         const currentUser = req.user._id;
 
-        const comment = await Comment.findById(commentId);
+        const comment : IComment | null = await Comment.findById(commentId);
 
         if(comment.senderId.toString() !== currentUser.toString()) return res.status(400).json({error : 'Cannot delete others comment'});
 
