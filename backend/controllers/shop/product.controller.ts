@@ -90,8 +90,9 @@ export const singleProduct = async (req : Request, res : Response, next : NextFu
         const { id: productId } = req.params;
 
         const products : IProduct | null = await Product.findById(productId).select('-updatedAt -__v');
+        const inventory : IInventory | null = await Inventory.findOne({productId : products._id});
 
-        if(products.availableProductQuantity === 0) return res.status(404).json({error : 'The product is not available in stock'}); 
+        if(inventory.availableQuantity === 0) return res.status(404).json({error : 'The product is not available in stock'}); 
 
         if(!products) return res.status(404).json({error : 'Product not found'});
 
