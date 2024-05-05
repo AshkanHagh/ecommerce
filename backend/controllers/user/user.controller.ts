@@ -1,8 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
-import User from '../models/user.model';
-import Address from '../models/shop/address.model';
-import type { IAddress, IUser } from '../types';
+import User from '../../models/user.model';
+import Address from '../../models/shop/address.model';
+import type { IAddress, IUser } from '../../types';
 
 export const userProfile = async (req : Request, res : Response, next : NextFunction) => {
 

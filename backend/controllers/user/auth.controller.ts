@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-import generateTokenAndSetCookie from '../utils/generateToken';
-import User from '../models/user.model';
-import type { IUser } from '../types';
+import generateTokenAndSetCookie from '../../utils/generateToken';
+import User from '../../models/user.model';
+import type { IUser } from '../../types';
 
 export const signup = async (req : Request, res : Response, next : NextFunction) => {
 

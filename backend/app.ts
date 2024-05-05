@@ -9,6 +9,7 @@ import roleRouter from './routes/shop/role.route';
 import userRouter from './routes/user.route';
 import productRouter from './routes/shop/product.route';
 import adminRouter from './routes/admin.route';
+import commentRouter from './routes/comment.route';
 import errorHandler from './middlewares/errorHandler';
 // import { upload } from './utils/multer';
 
@@ -26,6 +27,7 @@ app.use('/api/role', roleRouter);
 app.use('/api/user', userRouter);
 app.use('/api/product', productRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/comment', commentRouter);
 
 app.use(errorHandler);
 

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import protectRoute from '../middlewares/protectRoute';
 import { checkReport } from '../middlewares/checkReports';
-import { updateAddress, updateProfile, userProfile } from '../controllers/user.controller';
+import { updateAddress, updateProfile, userProfile } from '../controllers/user/user.controller';
 import { newReport } from '../controllers/shop/report.controller';
 import errorHandler from '../middlewares/errorHandler';
 

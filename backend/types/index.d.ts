@@ -120,3 +120,16 @@ export interface IReport extends Document {
     user : ObjectId
     reportersId : ObjectId[]
 }
+
+export interface IComment extends Document {
+    productId : ObjectId
+    senderId : ObjectId[]
+    text : string
+    replies? : {
+        userId : ObjectId
+        text : string
+        fullName : string
+        profilePic : string
+    }[]
+    likes? : ObjectId[]
+}
