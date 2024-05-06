@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import protectRoute from '../../middlewares/protectRoute';
-import { adminPermission } from '../../middlewares/permission';
-import { allUsers, banUser, count, deleteSingleUser } from '../../controllers/admin/admin.user';
-import { allProducts, comments, deleteProduct, inventory } from '../../controllers/admin/admin.product';
+import protectRoute from '../middlewares/protectRoute';
+import { adminPermission } from '../middlewares/permission';
+import { allUsers, banUser, count, deleteSingleUser } from '../controllers/admin/admin.user';
+import { allProducts, comments, deleteProduct, inventory } from '../controllers/admin/admin.product';
 
 const router = Router();
 

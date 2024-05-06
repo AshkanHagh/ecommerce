@@ -4,12 +4,10 @@ import connectDB from './db/connectDB';
 import multer from 'multer';
 import path from 'path';
 
-import authRouter from './routes/user/auth.route';
-import roleRouter from './routes/user/role.route';
-import userRouter from './routes/user/user.route';
-import productRouter from './routes/shop/product.route';
-import adminRouter from './routes/admin/admin.route';
-import commentRouter from './routes/shop/comment.route';
+import authRouter from './routes/auth.route';
+import userRouter from './routes/user.route';
+import productRouter from './routes/product.route';
+import adminRouter from './routes/admin.route';
 import errorHandler from './middlewares/errorHandler';
 import { upload } from './utils/multer';
 
@@ -23,11 +21,9 @@ app.use(cookieParser());
 app.use(upload);
 
 app.use('/api/auth', authRouter);
-app.use('/api/role', roleRouter);
 app.use('/api/user', userRouter);
 app.use('/api/product', productRouter);
 app.use('/api/admin', adminRouter);
-app.use('/api/comment', commentRouter);
 
 app.use(errorHandler);
 
