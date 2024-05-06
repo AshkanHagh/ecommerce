@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
 import crypto from 'crypto';
-import sendEmail from '../utils/email';
-import User from '../models/user.model';
-import type { IUser } from '../types';
+import sendEmail from '../../utils/email';
+import User from '../../models/user.model';
+import type { IUser } from '../../types';
 
 export const confirmEmail = async (req : Request, res : Response, next : NextFunction) => {
 

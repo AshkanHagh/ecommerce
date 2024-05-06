@@ -13,6 +13,10 @@ export const addToCart = async (req : Request, res : Response, next : NextFuncti
 
         let cart : ICart | null = await Cart.findOne({user : userId});
 
+        const inventory : IInventory | null = await Inventory.findOne({productId});
+
+        if(inventory.availableQuantity <= quantity) return res.status(200).json({error : 'Not enough products available'});
+
         await WishList.findOneAndUpdate({user : userId}, {
             $pull : {products : {product : productId}}
         });

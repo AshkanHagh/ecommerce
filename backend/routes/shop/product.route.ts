@@ -12,7 +12,7 @@ const router = Router();
 // cart route
 router.post('/cart', [protectRoute, checkReport], addToCart);
 
-router.delete('/cart', [protectRoute, checkReport], removeCart);
+router.delete('/cart', protectRoute, removeCart);
 
 router.get('/cart', [protectRoute, checkReport], getCart);
 
@@ -20,7 +20,7 @@ router.get('/cart', [protectRoute, checkReport], getCart);
 // wishList route
 router.post('/wishList', [protectRoute, checkReport], addToWishList);
 
-router.delete('/wishList', [protectRoute, checkReport], removeWishList);
+router.delete('/wishList', protectRoute, removeWishList);
 
 router.get('/wishList', [protectRoute, checkReport], getWishList);
 
@@ -28,9 +28,9 @@ router.get('/wishList', [protectRoute, checkReport], getWishList);
 // order route
 router.post('/order', [protectRoute, checkReport], newOrder);
 
-router.get('/order/:id', [protectRoute, checkReport], orderDetail);
+router.get('/order/:id', protectRoute, orderDetail);
 
-router.put('/order/status/:id', [protectRoute, confirmPermission, checkReport], updateOrder);
+router.put('/order/status/:id', [protectRoute, confirmPermission], updateOrder);
 
 
 // product route

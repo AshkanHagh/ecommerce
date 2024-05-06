@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import type { IComment } from '../types';
+import type { IComment } from '../../types';
 
 const CommentSchema = new Schema({
     productId : {
@@ -7,11 +7,11 @@ const CommentSchema = new Schema({
         ref : 'Product',
         required : true,
     },
-    senderId : [{
+    senderId : {
         type : Schema.Types.ObjectId,
         ref : 'User',
         required : true
-    }],
+    },
     text : {
         type : String,
         maxLength : 255,

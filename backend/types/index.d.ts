@@ -123,7 +123,7 @@ export interface IReport extends Document {
 
 export interface IComment extends Document {
     productId : ObjectId
-    senderId : ObjectId[]
+    senderId : ObjectId
     text : string
     replies? : {
         userId : ObjectId
@@ -132,4 +132,25 @@ export interface IComment extends Document {
         profilePic : string
     }[]
     likes? : ObjectId[]
+}
+
+export interface ICommentDocument extends IComment {
+    replies? : {
+        profilePic : string
+        fullName : string
+        text : string
+    }[]
+    text : string
+    senderId : {
+        _id? : ObjectId
+        fullName : string
+        profilePic : string
+    }
+}
+
+export interface IInventoryDocument extends IInventory {
+    productId? : {
+        _id : ObjectId
+        name : string
+    }
 }
