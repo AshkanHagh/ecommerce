@@ -9,7 +9,7 @@ Features :
 * Product search(category or name) & Pagination
 * Add to Cart & Add to WishList
 * Limited Product Quantity
-* Add Order and Order status
+* Order payment gateway and Order status
 * Comment CRUD
 * Report User and Ban
 * User search & profile
