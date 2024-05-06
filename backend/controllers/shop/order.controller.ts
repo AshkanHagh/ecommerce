@@ -94,6 +94,8 @@ export const getPayment = async (req : Request, res : Response, next : NextFunct
 
 }
 
+/* To use this you most copy the url that response in localhost:5000/api/product/payment and past to google after that you most accept or deny
+payment after that you redirect to a link but link show nothing you most copy the url and past to your postman */
 export const verifyPayment = async (req : Request, res : Response, next : NextFunction) => {
 
     try {

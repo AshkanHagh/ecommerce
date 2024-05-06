@@ -18,7 +18,7 @@ Features :
 * Ban & Permission & JWT-Cookie middleware
 
 ### Description 
-Mid level E-commerce Rest API, Technologies i use : Typescript, Bun, MongoDB, Express, js libraries i use : bcrypt, cookie-parser, JWT, mongoose, nodemailer, multer, cloud image storage : cloudinary
+Mid level E-commerce Rest API, Technologies i use : Typescript, Bun, MongoDB, Express, js libraries i use : bcrypt, cookie-parser, JWT, mongoose, nodemailer, multer, cloud image storage : cloudinary, payment : i use [zarinpal](https://www.zarinpal.com/) but is in develop mode
 ### Install packages
 ```shell
 npm install -g bun # install bun runtime
