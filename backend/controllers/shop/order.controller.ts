@@ -2,9 +2,8 @@ import type { NextFunction, Request, Response } from 'express';
 import Cart from '../../models/shop/cart.model';
 import Order from '../../models/shop/order.model';
 import Inventory from '../../models/shop/inventory.model';
-import type { IAddress, ICartDocument, IInventory, IOrder, IOrderDocument, IUser } from '../../types';
+import type { IAddress, ICartDocument, IInventory, IOrder, IOrderDocument } from '../../types';
 import ZarinpalCheckout from 'zarinpal-checkout';
-import User from '../../models/user.model';
 import Address from '../../models/shop/address.model';
 
 let zarinpal = ZarinpalCheckout.create(process.env.MERCHANT_ID, true);
@@ -80,9 +79,9 @@ export const getPayment = async (req : Request, res : Response, next : NextFunct
         const payment = await zarinpal.PaymentRequest({
             Amount : totalPrice,
             CallbackURL : 'http://localhost:5000/api/product/payment/verify',
-            Description : 'Tanks',
+            Description : 'Thank you for trusting the website, the product will be sent immediately upon payment',
             Email : email,
-            Mobile : '09373349901',
+            Mobile : '',
         });
 
         res.status(200).json(payment);
@@ -107,7 +106,14 @@ export const verifyPayment = async (req : Request, res : Response, next : NextFu
         let totalPrice = 0;
 
         for (const item of cart.products) {
-            totalPrice += item.product.price * item.quantity
+            totalPrice += item.product.price * item.quantity;
+
+            const inventory = await Inventory.findOne({productId : item.product._id});
+
+            if(!inventory) return res.status(404).json({error : 'Inventory not found'});
+
+            if(inventory.availableQuantity == 0 || inventory.availableQuantity < item.quantity)
+                return res.status(400).json({error : 'Not enough available products'});
         }
 
         if(Status == 'NOK') return res.status(200).json({error : 'Payment failed!'});
@@ -119,53 +125,30 @@ export const verifyPayment = async (req : Request, res : Response, next : NextFu
 
         if(payment.status !== 100) return res.status(200).json({error : 'Payment failed!'});
 
-        try {
-            const userId = req.user._id;
+        const address : IAddress | null = await Address.findOne({user : userId});
     
-            const cart : ICartDocument | null = await Cart.findOne({user : userId}).populate('products.product');
-            const address : IAddress | null = await Address.findOne({user : userId});
-    
-            let totalPrice = 0;
-    
-            for (const item of cart.products) {
-
-                totalPrice += item.product.price * item.quantity;
-    
-                const inventory = await Inventory.findOne({productId : item.product._id});
-
-                if(!inventory) return res.status(404).json({error : 'Inventory not found'});
-    
-                if(inventory.availableQuantity === 0 || inventory.availableQuantity < item.quantity)
-                    return res.status(400).json({error : 'Not enough available products'});
-            }
-    
-            const order = new Order({
+        const order = new Order({
                 
-                user: userId,
-                products: cart.products.map((item: any) => item.product),
-                totalPrice, status: 'pending', address
-            });
+            user: userId,
+            products: cart.products.map(item => item.product),
+            totalPrice, status: 'pending', address
+        });
     
-            await order.save();
+        await order.save();
     
-            await Cart.findByIdAndUpdate(cart._id, {
-                $pull : {products : {product : order.products}}
-            });
+        await Cart.findByIdAndUpdate(cart._id, {
+            $pull : {products : {product : order.products}}
+        });
     
-            for (const item of cart.products) {
+        for (const item of cart.products) {
     
-                const inventory : IInventory | null = await Inventory.findOne({productId : item.product._id});
-                inventory.availableQuantity -= item.quantity;
+            const inventory : IInventory | null = await Inventory.findOne({productId : item.product._id});
+            inventory.availableQuantity -= item.quantity;
     
-                await inventory.save();
-            }
+            await inventory.save();
+         }
     
-            res.status(200).json({message: `Order placed successfully ${payment.RefID}`});
-            
-        } catch (error) {
-            
-            next(error);
-        }
+        res.status(200).json({message: `Order placed successfully ${payment.RefID}`});
 
     } catch (error) {
         

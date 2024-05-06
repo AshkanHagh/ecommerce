@@ -61,7 +61,7 @@ export interface ICart extends Document {
 }
 
 export interface ICartDocument extends ICart {
-    products : {
+    products? : {
         product : {
             _id? : ObjectId
             name : string,
