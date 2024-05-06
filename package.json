@@ -3,7 +3,8 @@
   "module": "app.ts",
   "type": "module",
   "scripts": {
-    "dev": "bun --watch backend/app.ts"
+    "dev": "bun --watch backend/app.ts",
+    "start" : "bun backend/app.ts"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
