@@ -1,9 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
 import Cart from '../../models/shop/cart.model';
 import WishList from '../../models/shop/whishList.model';
-import Order from '../../models/shop/order.model';
 import Inventory from '../../models/shop/inventory.model';
-import type { ICart, ICartDocument, IInventory, IOrder, IOrderDocument } from '../../types';
+import type { ICart, ICartDocument, IInventory } from '../../types';
 
 export const addToCart = async (req : Request, res : Response, next : NextFunction) => {
 

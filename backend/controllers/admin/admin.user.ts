@@ -10,7 +10,7 @@ import Address from '../../models/shop/address.model';
 import Comment from '../../models/shop/comment.model';
 import type { ICart, IComment, IPagination, IProduct, IReport, IUser, IWishList } from '../../types';
 
-export const allUsers = async (req : Request, res : Response, next : NextFunction) => {
+export const users = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { page, limit } = req.query;
@@ -41,7 +41,7 @@ export const allUsers = async (req : Request, res : Response, next : NextFunctio
 
 }
 
-export const deleteSingleUser = async (req : Request, res : Response, next : NextFunction) => {
+export const deleteUser = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { id: userToModify } = req.params;

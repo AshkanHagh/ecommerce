@@ -4,9 +4,9 @@ import WishList from '../../models/shop/whishList.model';
 import Cart from '../../models/shop/cart.model';
 import Inventory from '../../models/shop/inventory.model';
 import Comment from '../../models/shop/comment.model';
-import type { IComment, ICommentDocument, IInventoryDocument, IPagination, IProduct } from '../../types';
+import type { ICommentDocument, IInventoryDocument, IPagination, IProduct } from '../../types';
 
-export const allProducts = async (req : Request, res : Response, next : NextFunction) => {
+export const productss = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { page, limit } = req.query;

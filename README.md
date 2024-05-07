@@ -36,6 +36,7 @@ CLOUDINARY_API_SECRET
 HOST_NAME # mail host name
 MAIL_USERNAME
 MAIL_PASSWORD
+MERCHANT_ID # Zarinpal
 ```
 
 ### Start the app
