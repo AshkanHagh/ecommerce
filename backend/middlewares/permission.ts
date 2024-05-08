@@ -4,7 +4,7 @@ import User from '../models/user.model';
 export const confirmPermission = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
-        const user = await User.findById(req.user._id);
+        const user = req.user;
 
         if(user.isSeller || user.isAdmin) {
             next();
@@ -24,7 +24,7 @@ export const confirmPermission = async (req : Request, res : Response, next : Ne
 export const adminPermission = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
-        const user = await User.findById(req.user._id);
+        const user = req.user;
 
         if(user.isAdmin) {
             next();

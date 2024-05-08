@@ -22,7 +22,7 @@ export const confirmEmail = async (req : Request, res : Response, next : NextFun
 
         sendEmail({email : currentUser.email.toString(), subject : 'Confirm Email', text : 'please confirm your email', html : `
             <p>Confirm Your Email</p>
-            <p>Click <a href="http://localhost:5000/api/role/${query}/${token}">here</a></p>
+            <p>Click <a href="http://localhost:5000/api/user/${query}/${token}">here</a></p>
         `});
 
         res.status(200).json({message : 'Email sended please check your email'});

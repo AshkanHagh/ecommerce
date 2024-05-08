@@ -6,7 +6,7 @@ import Inventory from '../../models/shop/inventory.model';
 import Comment from '../../models/shop/comment.model';
 import type { ICommentDocument, IInventoryDocument, IPagination, IProduct } from '../../types';
 
-export const productss = async (req : Request, res : Response, next : NextFunction) => {
+export const products = async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { page, limit } = req.query;
@@ -41,23 +41,13 @@ export const deleteProduct = async (req : Request, res : Response, next : NextFu
     try {
         const { id: productId } = req.params;
         
-        await Cart.updateMany({
-            $pull : {products : {product : productId}}
-        });
-
-        await WishList.updateMany({
-            $pull : {products : {product : productId}}
-        });
-
-        await Comment.deleteMany({
-            productId
-        });
-
-        await Inventory.deleteOne({
-            productId
-        });
-
-        await Product.findByIdAndDelete(productId);
+        await Promise.all([
+            await Cart.updateMany({$pull : {products : {product : productId}}}),
+            await WishList.updateMany({$pull : {products : {product : productId}}}),
+            await Comment.deleteMany({productId}),
+            await Inventory.deleteOne({productId}),
+            await Product.findByIdAndDelete(productId)
+        ]);
 
         res.status(200).json({message : 'Product deleted', productId});
 

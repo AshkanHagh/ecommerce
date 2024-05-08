@@ -126,6 +126,8 @@ export const verifyPayment = async (req : Request, res : Response, next : NextFu
         if(payment.status !== 100) return res.status(200).json({error : 'Payment failed!'});
 
         const address : IAddress | null = await Address.findOne({user : userId});
+
+        if(!address) return res.status(404).json({error : 'Address not found, Please update your address'});
     
         const order = new Order({
                 

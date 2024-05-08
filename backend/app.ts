@@ -1,8 +1,6 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import connectDB from './db/connectDB';
-import multer from 'multer';
-import path from 'path';
 
 import authRouter from './routes/auth.route';
 import userRouter from './routes/user.route';
@@ -18,7 +16,7 @@ connectDB();
 app.use(express.json());
 app.use(express.urlencoded({ extended : true }));
 app.use(cookieParser());
-app.use(upload);
+app.use(upload); // this have a bug i will fixed soon
 
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);

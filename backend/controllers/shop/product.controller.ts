@@ -12,7 +12,7 @@ export const newProduct = async (req : Request, res : Response, next : NextFunct
         const newProduct : IProduct | null = new Product({
             name, price, description, category, color, size,
             user : userId,
-            // images : req.images
+            images : req.images
         });
 
         const available : IInventory = new Inventory({

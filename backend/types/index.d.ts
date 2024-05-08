@@ -82,6 +82,7 @@ export interface IWishList extends Document {
 export interface IWishListDocument extends IWishList {
     products : {
         product : {
+            _id : ObjectId
             name : string,
             price : number,
             description : string

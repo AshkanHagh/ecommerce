@@ -50,17 +50,17 @@ router.put('/update/:id', [protectRoute, confirmPermission, checkReport], editPr
 
 
 // Comment Route
-router.post('/new/:id', [protectRoute, checkReport], newComment);
+router.post('/comment/new/:id', [protectRoute, checkReport], newComment);
 
-router.put('/replay/:id', [protectRoute, checkReport], replay);
+router.put('/comment/replay/:id', [protectRoute, checkReport], replay);
 
-router.put('/edit/:id', protectRoute, editComment);
+router.put('/comment/edit/:id', protectRoute, editComment);
 
-router.delete('/del/:id', protectRoute, deleteComment);
+router.delete('/comment/del/:id', protectRoute, deleteComment);
 
-router.put('/like/:id', [protectRoute, checkReport], likeComment);
+router.put('/comment/like/:id', [protectRoute, checkReport], likeComment);
 
-router.get('/:id', protectRoute, getProductComments);
+router.get('/comment/:id', protectRoute, getProductComments);
 
 
 

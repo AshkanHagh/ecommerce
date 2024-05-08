@@ -71,6 +71,7 @@ export const getWishList = async (req : Request, res : Response, next : NextFunc
         const mappedWishList = wishList.products.map(product => {
 
             return {
+                _id : product.product._id,
                 name: product.product.name,
                 price: product.product.price,
                 description : product.product.description

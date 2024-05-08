@@ -2,22 +2,22 @@ import { Router } from 'express';
 import protectRoute from '../middlewares/protectRoute';
 import { adminPermission } from '../middlewares/permission';
 import { users, banUser, count, deleteUser } from '../controllers/admin/admin.user';
-import { productss, comments, deleteProduct, inventory } from '../controllers/admin/admin.product';
+import { products, comments, deleteProduct, inventory } from '../controllers/admin/admin.product';
 
 const router = Router();
 
 // Users, Admin
 router.get('/users', [protectRoute, adminPermission], users);
 
-router.delete('/users/:id', [protectRoute, adminPermission], deleteUser);
+router.delete('/user/:id', [protectRoute, adminPermission], deleteUser);
 
-router.put('/users/ban/:id', [protectRoute, adminPermission], banUser);
+router.put('/user/ban/:id', [protectRoute, adminPermission], banUser);
 
 router.get('/count', [protectRoute, adminPermission], count);
 
 
 // Products, Admin
-router.get('/product', [protectRoute, adminPermission], productss);
+router.get('/product', [protectRoute, adminPermission], products);
 
 router.delete('/product/:id', [protectRoute, adminPermission], deleteProduct);
 
