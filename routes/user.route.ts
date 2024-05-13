@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import protectRoute from '../middlewares/protectRoute';
-import { checkReport } from '../middlewares/checkReports';
+import { checkReport } from '../middlewares/reportChecker';
 import { updateAddress, updateProfile, userProfile } from '../controllers/user/user.controller';
 import { newReport } from '../controllers/shop/report.controller';
 import { confirmEmail, permissionToAdmin, permissionToSeller } from '../controllers/user/role.controller';

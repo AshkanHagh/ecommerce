@@ -72,7 +72,7 @@ export const comments = async (req : Request, res : Response, next : NextFunctio
                 productId : comment.productId,
                 fullName : comment.senderId.fullName,
                 profilePic : comment.senderId.profilePic,
-                likes : comment.likes.length
+                likes : comment.likes!.length
             }
         });
 
@@ -93,8 +93,8 @@ export const inventory = async (req : Request, res : Response, next : NextFuncti
         const mappedInventory = inventory.map(inventory => {
 
             return {
-                productId : inventory.productId._id,
-                name : inventory.productId.name,
+                productId : inventory.productId!._id,
+                name : inventory.productId!.name,
                 availableQuantity : inventory.availableQuantity
             }
         });

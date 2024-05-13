@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import protectRoute from '../middlewares/protectRoute';
 import { confirmPermission } from '../middlewares/permission';
-import { checkReport } from '../middlewares/checkReports';
+import { checkReport } from '../middlewares/reportChecker';
 import { uploadFile } from '../middlewares/upload';
 import { products, newProduct, searchProduct, singleProduct, editProduct } from '../controllers/shop/product.controller';
 import { addToCart, getCart, removeCart } from '../controllers/shop/cart.controller';

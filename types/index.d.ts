@@ -1,26 +1,64 @@
 import type { request } from 'express';
-import type { Document, Date, ObjectId } from 'mongoose';
+import type { Document, ObjectId } from 'mongoose';
 import type { JwtPayload } from 'jsonwebtoken';
+
+export type IError = {
+    statusCode : Number
+    message : string
+}
+
+export interface IUserModel extends Document {
+    fullName : string
+    email : string
+    password : string
+    profilePic? : {
+        public_id : string
+        url : string
+    }
+    role : 'admin' | 'seller' | 'user' | string;
+    birthDay? : Date
+    isBan? : boolean
+    comparePassword : (password : string) => Promise<boolean>
+    SignAccessToken : () => string
+    SignRefreshToken : () => string
+    _doc : any
+}
 
 declare global {
     namespace Express {
         interface Request {
-            user : JwtPayload
-            images : any
+            user? : IUserModel
         }
     }
 }
 
-export interface IUser extends Document {
+export interface IRegisterBody {
     fullName : string
     email : string
     password : string
-    profilePic? : string
-    isAdmin? : boolean
-    isSeller? : boolean
-    isBan? : boolean
-    token? : string
-    tokenExpireDate? : unknown
+}
+
+export interface ILoginRequest {
+    email : string
+    password : string
+}
+
+export interface IActivationToken {
+    token : string
+    activationCode : string
+}
+
+export interface IActivationRequest {
+    activationToken : string
+    activationCode : string
+}
+
+export interface ITokenOptions {
+    expires : Date
+    maxAge : number
+    httpOnly : boolean
+    sameSite : 'lax' | 'strict' | 'none' | undefined
+    secure? : boolean
 }
 
 export interface IProduct extends Document {
