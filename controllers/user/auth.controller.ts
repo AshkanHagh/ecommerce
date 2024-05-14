@@ -6,8 +6,8 @@ import type { IActivationRequest, ILoginRequest, IRegisterBody, IUserModel } fro
 import { validateLogin, validateRegister } from '../../validation/Joi';
 import createActivationToken from '../../utils/activationToken';
 import sendEmail from '../../utils/sendMail';
-import jwt, { type Secret } from 'jsonwebtoken';
-import { sendToken } from '../../utils/jwt';
+import jwt, { type JwtPayload, type Secret } from 'jsonwebtoken';
+import { accessTokenOption, refreshTokenOption, sendToken } from '../../utils/jwt';
 import { redis } from '../../db/redis';
 
 export const register = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
@@ -95,6 +95,35 @@ export const logout = CatchAsyncError(async (req : Request, res : Response, next
 
         res.status(200).json({message : 'Logged out successfully'});
         
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const refreshToken = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const refresh_token = req.cookies.refresh_token as string;
+        const decoded = jwt.verify(refresh_token, process.env.REFRESH_TOKEN as string) as JwtPayload;
+
+        const message = 'Could not refresh token';
+
+        if(!decoded) return next(new ErrorHandler(message, 400));
+
+        const session = await redis.get(decoded.id as string);
+        if(!session) return next(new ErrorHandler(message, 400));
+
+        const user = JSON.parse(session);
+        req.user = user;
+
+        const accessToken = jwt.sign({id : user._id}, process.env.ACCESS_TOKEN as string, {expiresIn : '5m'});
+        const refreshToken = jwt.sign({id : user._id}, process.env.REFRESH_TOKEN as string, {expiresIn : '3d'});
+
+        res.cookie('access_token', accessToken, accessTokenOption);
+        res.cookie('refresh_token', refreshToken, refreshTokenOption);
+
+        res.status(200).json({accessToken});
+
     } catch (error : any) {
         return next(new ErrorHandler(error.message, 400));
     }
