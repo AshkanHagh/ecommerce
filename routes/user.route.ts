@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import { login, logout, refreshToken, register, verifyAccount } from '../controllers/user/auth.controller';
-import { accountInfo, address, addressInfo, updateAccountInfo, updateAccountPassword, updateAccountProfilePic } from '../controllers/user/user.controller';
-import { isAuthenticated } from '../middlewares/auth';
+import { accountInfo, address, addressInfo, updateAccountInfo, updateAccountPassword, 
+    updateAccountProfilePic } from '../controllers/user/user.controller';
+import { authorizeRoles, isAuthenticated } from '../middlewares/auth';
 import { checkReport } from '../middlewares/reportChecker';
+import { report } from '../controllers/user/report.controller';
+import { getRoleRequests, permissionToAdmin, permissionToSeller, rejectRoleRequest, roleRequest } from '../controllers/user/role.controller';
 
 
 const router = Router();
@@ -19,15 +22,17 @@ router.get('/auth/logout', isAuthenticated, logout);
 router.get('/auth/refresh', refreshToken);
 
 // Roles
-// router.post('/confirm/:query', confirmEmail);
+router.post('/role/request', [isAuthenticated, authorizeRoles('user')], roleRequest);
 
-// router.put('/admin/:token', permissionToAdmin);
+router.get('/role', [isAuthenticated, authorizeRoles('admin')], getRoleRequests);
 
-// router.put('/seller/:token', permissionToSeller);
+router.patch('/role/confirm/admin/:id', [isAuthenticated, authorizeRoles('admin')], permissionToAdmin);
+
+router.patch('/role/confirm/seller/:id', [isAuthenticated, authorizeRoles('admin')], permissionToSeller);
+
+router.delete('/role/reject/:id', [isAuthenticated, authorizeRoles('admin')], rejectRoleRequest);
 
 // Users
-// router.post('/report/:id', protectRoute, newReport);
-
 router.get('/me', [isAuthenticated, checkReport], accountInfo);
 
 router.patch('/me/info', isAuthenticated, updateAccountInfo);
@@ -39,5 +44,7 @@ router.patch('/me/address', isAuthenticated, address);
 router.get('/me/address', isAuthenticated, addressInfo);
 
 router.post('/me/avatar', isAuthenticated, updateAccountProfilePic);
+
+router.post('/report/:id', isAuthenticated, report);
 
 export default router;

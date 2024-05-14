@@ -1,87 +1,115 @@
-// import type { NextFunction, Request, Response } from 'express';
-// import crypto from 'crypto';
-// import sendEmail from '../../utils/email';
-// import User from '../../models/user.model';
-// import type { IUser } from '../../types';
+import type { NextFunction, Request, Response } from 'express';
+import { CatchAsyncError } from '../../middlewares/catchAsyncError';
+import ErrorHandler from '../../utils/errorHandler';
+import type { IRoleModel, IRoleRequests } from '../../types';
+import Role from '../../models/role';
+import User from '../../models/user.model';
+import { redis } from '../../db/redis';
+import sendEmail from '../../utils/sendMail';
 
-// export const confirmEmail = async (req : Request, res : Response, next : NextFunction) => {
+export const roleRequest = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
-//     try {
-//         const { email } = req.body;
-//         const { query } = req.params;
+    try {
+        const { message, requestedRole } = req.body as IRoleModel;
+        const userId = req.user;
 
-//         const currentUser : IUser | null = await User.findOne({email}).select('-password');
-//         if(!currentUser) return res.status(404).json({error : 'User not found'});
-        
-//         const token = crypto.randomBytes(12).toString('hex');
+        await Role.create({
+            userId, message, requestedRole
+        });
 
-//         currentUser.token = token;
-//         currentUser.tokenExpireDate = Date.now() + 3600000;
+        res.status(200).json({success : true, message : `Your request to access role ${req.user?.role} has been successfully sent`});
 
-//         await currentUser.save();
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
 
-//         sendEmail({email : currentUser.email.toString(), subject : 'Confirm Email', text : 'please confirm your email', html : `
-//             <p>Confirm Your Email</p>
-//             <p>Click <a href="http://localhost:5000/api/user/${query}/${token}">here</a></p>
-//         `});
+export const getRoleRequests = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
-//         res.status(200).json({message : 'Email sended please check your email'});
+    try {
+        const requests = await Role.find().populate('userId');
 
-//     } catch (error) {
-        
-//         next(error);
-//     }
+        const mappedRequests = requests.map((result : IRoleRequests) => {
+            const { fullName, email, role } = result.userId;
+            
+            return {
+                fullName, email, currentRole : role, message : result.message, requestedRole : result.requestedRole
+            }
+        });
 
-// }
+        res.status(200).json(mappedRequests);
 
-// export const permissionToAdmin = async (req : Request, res : Response, next : NextFunction) => {
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
 
-//     try {
-//         const { token } = req.params;
+export const permissionToAdmin = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
-//         const user = await User.findOne({token, tokenExpireDate : {
-//             $gt : Date.now()
-//         }});
+    try {
+        const { id : userId } = req.params;
 
-//         if(!user) return res.status(401).json({error : 'Token is not valid'});
+        const roleRequest = await Role.findOne({userId});
+        if(!roleRequest) return next(new ErrorHandler('Role request not found', 400));
 
-//         user.isAdmin = true
-//         user.token = null;
-//         user.tokenExpireDate = null;
+        const user = await User.findByIdAndUpdate(userId, {$set : {role : 'admin'}});
+        await redis.set(user?._id, JSON.stringify(user), 'EX', 604800);
 
-//         await user.save();
+        await Role.findOneAndDelete({userId : user?._id});
 
-//         res.status(200).json({message : 'Role changed to admin'});
+        await sendEmail({email : user!.email, subject : 'Admin role request', text : 'Your access level has been upgraded to admin', html : `
+            Your access level has been upgraded to admin <h4>${user!.email}</h4>
+        `});
 
-//     } catch (error) {
-        
-//         next(error);
-//     }
+        res.status(200).json({success : true, message : `user role changed to admin successfully`});
 
-// }
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+})
 
-// export const permissionToSeller = async (req : Request, res : Response, next : NextFunction) => {
+export const permissionToSeller = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
-//     try {
-//         const { token } = req.params;
+    try {
+        const { id : userId } = req.params;
 
-//         const user = await User.findOne({token, tokenExpireDate : {
-//             $gt : Date.now()
-//         }});
-        
-//         if(!user) return res.status(401).json({error : 'Token is not valid'});
+        const roleRequest = await Role.findOne({userId});
+        if(!roleRequest) return next(new ErrorHandler('Role request not found', 400));
 
-//         user.isSeller = true;
-//         user.token = null;
-//         user.tokenExpireDate = null;
+        const user = await User.findByIdAndUpdate(userId, {$set : {role : 'seller'}});
+        await redis.set(user?._id, JSON.stringify(user), 'EX', 604800);
 
-//         await user.save()
+        await sendEmail({email : user!.email, subject : 'Admin role request', text : 'Your access level has been upgraded to admin', html : `
+        <h4>${user!.email}</h4>
+        `});
 
-//         res.status(200).json({message : 'Role changed to seller'});
+        await Role.findOneAndDelete({userId : user?._id});
 
-//     } catch (error) {
-        
-//         next(error);
-//     }
+        res.status(200).json({success : true, message : `user role changed to seller successfully`});
 
-// }
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const rejectRoleRequest = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const { id : userId } = req.params;
+
+        const result = await redis.get(userId);
+        const user = JSON.parse(result!);
+
+        const role = await Role.findOneAndDelete({userId : userId});
+        if(!role) return next(new ErrorHandler('Role request not found', 400));
+
+        await sendEmail({email : user!.email, subject : 'Admin role request rejected', text : 'Your request for role has been rejected', html : `
+            Your access level has been rejected
+        `});
+
+        res.status(200).json({success : true, message : 'Role request rejected'});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});

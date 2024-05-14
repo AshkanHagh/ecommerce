@@ -34,6 +34,12 @@ export interface IAddressModel extends Document {
     postalCode : string
 }
 
+export interface IRoleModel extends Document {
+    userId : IUserModel
+    message : string
+    requestedRole : 'seller' | 'admin' | string
+}
+
 declare global {
     namespace Express {
         interface Request {
@@ -66,6 +72,16 @@ export interface IUpdatePasswordBody {
 
 export interface IUpdateProfilePic {
     profilePic : string
+}
+
+export interface IRoleRequests {
+    userId : {
+        fullName : string
+        email : string
+        role : string
+    }
+    message : string
+    requestedRole : string
 }
 
 export interface IActivationToken {
@@ -170,7 +186,7 @@ export interface IInventory extends Document {
     availableQuantity : number
 }
 
-export interface IReport extends Document {
+export interface IReportModel extends Document {
     user : ObjectId
     reportersId : ObjectId[]
 }

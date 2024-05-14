@@ -1,20 +1,16 @@
-import { Schema, model } from 'mongoose';
-import type { IReport } from '../types';
+import { Model, Schema, model } from 'mongoose';
+import type { IReportModel } from '../types';
 
-const ReportSchema = new Schema({
+const ReportSchema = new Schema<IReportModel>({
     user : {
-        type : Schema.Types.ObjectId,
-        ref : 'User',
-        required : true
+        type : Schema.Types.ObjectId, ref : 'User', required : true
     },
     reportersId : [{
-        type : Schema.Types.ObjectId,
-        ref : 'User',
-        default : []
+        type : Schema.Types.ObjectId, ref : 'User', default : []
     }]
 
 }, {timestamps : true});
 
-const Report = model<IReport>('Report', ReportSchema);
+const Report : Model<IReportModel> = model('Report', ReportSchema);
 
 export default Report;

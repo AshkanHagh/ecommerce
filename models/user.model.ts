@@ -1,4 +1,4 @@
-import { Schema, model } from 'mongoose';
+import { Model, Schema, model } from 'mongoose';
 import type { IUserModel } from '../types';
 import bcrypt from 'bcrypt';
 import jwt, { type Secret } from 'jsonwebtoken';
@@ -46,6 +46,6 @@ UserSchema.methods.comparePassword = async function (enteredPassword : string) :
     return await bcrypt.compare(enteredPassword, this.password);
 }
 
-const User = model<IUserModel>('User', UserSchema);
+const User : Model<IUserModel> = model('User', UserSchema);
 
 export default User;
