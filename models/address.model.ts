@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
-import type { IAddress } from '../../types';
+import type { IAddressModel } from '../types';
 
-const AddressSchema = new Schema({
+const AddressSchema = new Schema<IAddressModel>({
     user : {
         type : Schema.Types.ObjectId,
         ref : 'User',
@@ -33,6 +33,6 @@ const AddressSchema = new Schema({
 
 }, {timestamps : true});
 
-const Address = model<IAddress>('Address', AddressSchema);
+const Address = model<IAddressModel>('Address', AddressSchema);
 
 export default Address;

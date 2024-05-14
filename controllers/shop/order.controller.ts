@@ -4,7 +4,7 @@ import Order from '../../models/shop/order.model';
 import Inventory from '../../models/shop/inventory.model';
 import type { IAddress, ICartDocument, IInventory, IOrder, IOrderDocument } from '../../types';
 import ZarinpalCheckout from 'zarinpal-checkout';
-import Address from '../../models/shop/address.model';
+import Address from '../../models/address.model';
 
 let zarinpal = ZarinpalCheckout.create(process.env.MERCHANT_ID, true);
 

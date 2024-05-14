@@ -6,7 +6,7 @@ import Cart from '../../models/shop/cart.model';
 import Order from '../../models/shop/order.model';
 import Inventory from '../../models/shop/inventory.model';
 import Report from '../../models/report.model';
-import Address from '../../models/shop/address.model';
+import Address from '../../models/address.model';
 import Comment from '../../models/shop/comment.model';
 import type { IPagination, IProduct, IUser } from '../../types';
 

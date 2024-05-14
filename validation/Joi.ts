@@ -19,3 +19,35 @@ const loginSchema = Joi.object({
 });
 
 export const validateLogin = validator(loginSchema);
+
+const accountInfoSchema = Joi.object({
+    fullName : Joi.string(),
+    email : Joi.string().email(),
+    birthDay : Joi.date()
+});
+
+export const validateAccountInfo = validator(accountInfoSchema);
+
+const accountPasswordSchema = Joi.object({
+    oldPassword : Joi.string().min(6).required(),
+    newPassword : Joi.string().min(6).required()
+});
+
+export const validateAccountPassword = validator(accountPasswordSchema);
+
+const accountAddressSchema = Joi.object({
+    addressLine1 : Joi.string(), 
+    addressLine2 : Joi.string(), 
+    city : Joi.string(), 
+    state : Joi.string(), 
+    country : Joi.string(), 
+    postalCode : Joi.string()
+});
+
+export const validateAddress = validator(accountAddressSchema);
+
+const accountProfileSchema = Joi.object({
+    profilePic : Joi.string().required()
+});
+
+export const validateProfile = validator(accountProfileSchema);

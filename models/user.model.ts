@@ -8,7 +8,7 @@ const UserSchema = new Schema<IUserModel>({
         type : String, required : [true, 'FullName field must be provided']
     },
     email : {
-        type : String, required : [true, 'Email field must be provided'], unique : true
+        type : String, required : [true, 'Email field must be provided'], unique : true, lowercase : true
     },
     password : {
         type : String, required : [true, 'Password field must be provided'], minlength : 6, select : false

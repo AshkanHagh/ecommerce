@@ -24,6 +24,16 @@ export interface IUserModel extends Document {
     _doc : any
 }
 
+export interface IAddressModel extends Document {
+    user? : ObjectId
+    addressLine1 : string
+    addressLine2 : string
+    city : string
+    state : string
+    country : string
+    postalCode : string
+}
+
 declare global {
     namespace Express {
         interface Request {
@@ -41,6 +51,21 @@ export interface IRegisterBody {
 export interface ILoginRequest {
     email : string
     password : string
+}
+
+export interface IUpdateInfoBody {
+    fullName : string
+    email : string
+    birthDay? : Date
+}
+
+export interface IUpdatePasswordBody {
+    oldPassword : string
+    newPassword : string
+}
+
+export interface IUpdateProfilePic {
+    profilePic : string
 }
 
 export interface IActivationToken {
@@ -126,16 +151,6 @@ export interface IWishListDocument extends IWishList {
             description : string
         }
     }[]
-}
-
-export interface IAddress extends Document {
-    user : ObjectId
-    addressLine1 : string
-    addressLine2 : string
-    city : string
-    state : string
-    country : string
-    postalCode : string
 }
 
 export interface IPagination {

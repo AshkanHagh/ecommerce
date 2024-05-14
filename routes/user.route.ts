@@ -1,27 +1,43 @@
 import { Router } from 'express';
-import protectRoute from '../middlewares/protectRoute';
+import { login, logout, refreshToken, register, verifyAccount } from '../controllers/user/auth.controller';
+import { accountInfo, address, addressInfo, updateAccountInfo, updateAccountPassword, updateAccountProfilePic } from '../controllers/user/user.controller';
+import { isAuthenticated } from '../middlewares/auth';
 import { checkReport } from '../middlewares/reportChecker';
-import { updateAddress, updateProfile, userProfile } from '../controllers/user/user.controller';
-import { newReport } from '../controllers/shop/report.controller';
-import { confirmEmail, permissionToAdmin, permissionToSeller } from '../controllers/user/role.controller';
+
 
 const router = Router();
 
-// role
-router.post('/confirm/:query', confirmEmail);
+// Auth
+router.post('/auth/register', register);
 
-router.put('/admin/:token', permissionToAdmin);
+router.post('/auth/verify', verifyAccount);
 
-router.put('/seller/:token', permissionToSeller);
+router.post('/auth/login', login);
 
-// users
-router.post('/report/:id', protectRoute, newReport);
+router.get('/auth/logout', isAuthenticated, logout);
 
-router.get('/', [protectRoute, checkReport], userProfile);
+router.get('/auth/refresh', refreshToken);
 
-router.put('/profile/:id', protectRoute, updateProfile);
+// Roles
+// router.post('/confirm/:query', confirmEmail);
 
-router.put('/address/:id', protectRoute, updateAddress);
+// router.put('/admin/:token', permissionToAdmin);
 
+// router.put('/seller/:token', permissionToSeller);
+
+// Users
+// router.post('/report/:id', protectRoute, newReport);
+
+router.get('/me', [isAuthenticated, checkReport], accountInfo);
+
+router.patch('/me/info', isAuthenticated, updateAccountInfo);
+
+router.patch('/me/password', isAuthenticated, updateAccountPassword);
+
+router.patch('/me/address', isAuthenticated, address);
+
+router.get('/me/address', isAuthenticated, addressInfo);
+
+router.post('/me/avatar', isAuthenticated, updateAccountProfilePic);
 
 export default router;

@@ -1,104 +1,161 @@
-// import type { Request, Response, NextFunction } from 'express';
-// import bcrypt from 'bcrypt';
-// import User from '../../models/user.model';
-// import Address from '../../models/shop/address.model';
-// import type { IAddress, IUser } from '../../types';
+import type { Request, Response, NextFunction } from 'express';
+import { Redis } from 'ioredis';
+import type { IAddressModel, IUpdateInfoBody, IUpdatePasswordBody, IUpdateProfilePic, IUserModel } from '../../types';
+import { CatchAsyncError } from '../../middlewares/catchAsyncError';
+import ErrorHandler from '../../utils/errorHandler';
+import { validateAccountInfo, validateAccountPassword, validateAddress, validateProfile } from '../../validation/Joi';
+import User from '../../models/user.model';
+import { redis } from '../../db/redis';
+import Address from '../../models/address.model';
+import {v2 as cloudinary} from 'cloudinary'; 
 
-// export const userProfile = async (req : Request, res : Response, next : NextFunction) => {
+export const accountInfo = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
-//     try {
-//         const userId : string = req.user._id;
+    try {
+        const user = req.user;
+        res.status(200).json({success : true, user});
 
-//         const currentUser : IUser | null = await User.findById(userId).select(
-//             '-password -isAdmin -isSeller -updatedAt -token -tokenExpireDate -__v'
-//         );
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+})
 
-//         if(!currentUser) return res.status(400).json({error : 'User not found'});
+export const updateAccountInfo = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
-//         res.status(200).json(currentUser);
+    try {
+        const { fullName, email, birthDay } = req.body as IUpdateInfoBody;
+        const userId = req.user?._id;
 
-//     } catch (error) {
+        const {error, value} = validateAccountInfo(req.body);
+        if(error) return next(new ErrorHandler(error.message, 400));
+
+        const user = await User.findById(userId);
+        const isEmailExists = await User.findOne({email});
+
+        if(isEmailExists) return next(new ErrorHandler('Email already exists', 400));
+
+        user!.fullName = fullName || user!.fullName;
+        user!.email = email || user!.email;
+        user!.birthDay = birthDay || user!.birthDay;
+        await user!.save();
+
+        redis.set(user?._id, JSON.stringify(user));
+
+        res.status(200).json({success : true, user});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const updateAccountPassword = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const { oldPassword, newPassword } = req.body as IUpdatePasswordBody;
+        const user = await User.findById(req.user?._id).select('+password');
         
-//         next(error);
-//     }
+        const {error, value} = validateAccountPassword(req.body);
+        if(error) return next(new ErrorHandler(error.message, 400));
 
-// }
+        const isPasswordMatch = await user?.comparePassword(oldPassword);
+        if(!isPasswordMatch) return next(new ErrorHandler('Invalid old password', 400));
 
-// export const updateProfile = async (req : Request, res : Response, next : NextFunction) => {
+        user!.password = newPassword;
+        await user?.save();
 
-//     try {
-//         const { fullName, email, password } = req.body;
-//         let { profilePic } = req.body;
-//         const userId : string = req.user._id;
-//         const { id } = req.params;
+        res.status(200).json({success : true, message : 'Password has been changed'});
 
-//         const currentUser : IUser | null = await User.findById(userId);
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
 
-//         if(!currentUser || id !== userId.toString()) return res.status(401).json({error : 'Access denied - Unauthorized'});
+export const address = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
-//         if(password) {
+    try {
+        const { addressLine1, addressLine2, city, state, country, postalCode } = req.body as IAddressModel;
+        const userId = req.user?._id;
 
-//             const salt = await bcrypt.genSalt(10);
-//             const hashedPassword = await bcrypt.hash(password, salt);
+        const {error, value} = validateAddress(req.body);
+        if(error) return next(new ErrorHandler(error.message, 400));
 
-//             currentUser.password = hashedPassword;
-//         }
+        let address = await Address.findOne({user : userId});
+        if(!address) {
 
-//         currentUser.fullName = fullName || currentUser.fullName;
-//         currentUser.email = email || currentUser.email;
+            address = await Address.create({
+                addressLine1, addressLine2, city, state, country, postalCode, user : userId
+            });
 
-//         await currentUser.save();
+            await address.save();
 
-//         currentUser.password = null;
-//         currentUser.token = null;
-//         currentUser.tokenExpireDate = null
+            return res.status(201).json({success : true, address});
+        }
 
-//         res.status(200).json(currentUser);
+        address.addressLine1 = addressLine1 || address.addressLine1;
+        address.addressLine2 = addressLine2 || address.addressLine2;
+        address.city = city || address.city; address.state = state || address.state;
+        address.country = country || address.country; address.postalCode = postalCode || address.postalCode;
 
-//     } catch (error) {
+        await address.save();
+
+        res.status(200).json({success : true, address});
         
-//         next(error);
-//     }
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
 
-// }
+export const addressInfo = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
-// export const updateAddress = async (req : Request, res : Response, next : NextFunction) => {
+    try {
+        const userId = req.user?._id;
 
-//     try {
-//         const { addressLine1, addressLine2, city, state, country, postalCode } = req.body;
-//         const userId : string = req.user._id;
-//         const { id } = req.params;
+        const address = await Address.findOne({user : userId});
+        if(!address) return next(new ErrorHandler('No address found. please set new address', 400));
 
-//         if(id !== userId.toString()) return res.status(401).json({error : 'Access denied - Unauthorized'});
+        res.status(200).json({success : true, address});
 
-//         let address : IAddress | null = await Address.findOne({user : userId});
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
 
-//         if(!address) {
+export const updateAccountProfilePic = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
-//             address = new Address({
-//                 user : userId,
-//                 addressLine1,
-//                 addressLine2,
-//                 city, state, country, postalCode
-//             });
+    try {
+        const { profilePic } = req.body as IUpdateProfilePic;
 
-//             await address.save();
-//         }
+        const {error, value} = validateProfile(req.body);
+        if(error) return next(new ErrorHandler(error.message, 400));
 
-//         address.addressLine1 = addressLine1 || address.addressLine1;
-//         address.addressLine2 = addressLine2 || address.addressLine2;
-//         address.city = city || address.city;
-//         address.state = state || address.state;
-//         address.country = country || address.country;
-//         address.postalCode = postalCode || address.postalCode;
+        const user = await User.findById(req.user?._id);
+        if(!profilePic && user) user.profilePic = user.profilePic;
 
-//         await address.save();
+        if(user?.profilePic?.public_id) {
+            
+            await cloudinary.uploader.destroy(user?.profilePic.public_id);
 
-//         res.status(200).json(address);
+            const myCloud = await cloudinary.uploader.upload(profilePic, {
+                folder : 'profilePic', width : 150
+            });
+            user!.profilePic = {
+                public_id : myCloud.public_id, url : myCloud.url
+            }
+        }
 
-//     } catch (error) {
-        
-//         next(error);
-//     }
+        const myCloud = await cloudinary.uploader.upload(profilePic, {
+            folder : 'profilePic', width : 150
+        });
+        user!.profilePic = {
+            public_id : myCloud.public_id, url : myCloud.url
+        }
 
-// }
+        await user?.save();
+        redis.set(user?._id, JSON.stringify(user));
+
+        res.status(201).json({success : true, profilePic : user?.profilePic});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+}); 
