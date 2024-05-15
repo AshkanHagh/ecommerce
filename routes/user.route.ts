@@ -33,7 +33,7 @@ router.patch('/role/confirm/seller/:id', [isAuthenticated, authorizeRoles('admin
 router.delete('/role/reject/:id', [isAuthenticated, authorizeRoles('admin')], rejectRoleRequest);
 
 // Users
-router.get('/me', [isAuthenticated, checkReport], accountInfo);
+router.get('/me', isAuthenticated, accountInfo);
 
 router.patch('/me/info', isAuthenticated, updateAccountInfo);
 

@@ -1,41 +1,34 @@
-import { Schema, model } from 'mongoose';
-import type { IProduct } from '../../types';
+import { Model, Schema, model } from 'mongoose';
+import type { IProductModel } from '../../types';
 
-const ProductSchema = new Schema({
+const ProductSchema = new Schema<IProductModel>({
     name : {
-        type : String,
-        required : true
+        type : String, required : [true, 'Product name must provided']
     },
     price : {
-        type : Number,
-        required : true
+        type : Number, required : [true, 'Product price must provided']
     },
     description : {
-        type : String,
-        required : true
+        type : String, required : [true, 'Product description must provided']
     },
-    images : [{
-        type : String
-    }],
+    images : [
+        {
+            public_id : String,
+            url : String
+        }
+    ],
     category : [{
-        type : String,
-        enum : ['Electronics', 'Books', 'Toys-and-games', 'Sport', 'Apparels', 'Food'],
-        required : true
+        type : String, enum : ['Electronics', 'Books', 'Toys-and-games', 'Sport', 'Apparels', 'Food'], 
+        required : [true, 'Product category must provided']
     }],
-    color : [{ 
-        type : String 
-    }],
-    size : [{ 
-        type : String 
-    }],
+    color : [{ type : String }],
+    size : [{ type : String }],
     user : {
-        type : Schema.Types.ObjectId,
-        ref : 'User',
-        required : true
+        type : Schema.Types.ObjectId, ref : 'User', required : [true, 'Product user account must provided']
     }
 
 }, {timestamps : true});
 
-const Product = model<IProduct>('Product', ProductSchema);
+const Product : Model<IProductModel> = model('Product', ProductSchema);
 
 export default Product;

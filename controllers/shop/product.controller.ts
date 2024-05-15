@@ -1,139 +1,135 @@
-import type { NextFunction, Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
+import { CatchAsyncError } from '../../middlewares/catchAsyncError';
+import ErrorHandler from '../../utils/errorHandler';
+import { redis } from '../../db/redis';
 import Product from '../../models/shop/product.model';
-import type { IInventory, IPagination, IProduct } from '../../types';
 import Inventory from '../../models/shop/inventory.model';
+import type { IInventoryModel, IProductModel } from '../../types';
+import { validateAddProduct } from '../../validation/Joi';
+import {v2 as cloudinary} from 'cloudinary';
 
-export const newProduct = async (req : Request, res : Response, next : NextFunction) => {
+export const createProduct = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
     try {
-        const { name, price, description, category, color, size, availableQuantity } = req.body;
-        const userId : string = req.user._id;
+        const { name, price, description, category, color, size } = req.body as IProductModel;
+        const { images } = req.body as any;
+        const { availableQuantity : quantity } = req.body as IInventoryModel;
 
-        const newProduct : IProduct | null = new Product({
-            name, price, description, category, color, size,
-            user : userId,
-            images : req.images
+        const {error, value} = validateAddProduct(req.body);
+        if(error) return next(new ErrorHandler(error.message, 400));
+
+        const product = await Product.create({
+            name, price, description, category, color, size, user : req.user?._id
         });
 
-        const available : IInventory = new Inventory({
-            productId : newProduct._id,
-            availableQuantity
+        if (images && images.length > 0) {
+            const uploadedImages = [];
+
+            for (const image of images) {
+
+                try {
+                    const myCloud = await cloudinary.uploader.upload(image, {
+                        folder: 'Images'
+                    });
+                    uploadedImages.push({
+                        public_id: myCloud.public_id,
+                        url: myCloud.secure_url
+                    });
+                } catch (error : any) {
+                    return next(new ErrorHandler(error.message, 400));
+                }
+            }
+
+            product.images = uploadedImages;
+            await product.save();
+        }
+
+        const inventory = await Inventory.create({
+            productId : product._id, availableQuantity : quantity
         });
 
-        await Promise.all([newProduct.save(), available.save()]);
+        await redis.set(`product:${product._id}`, JSON.stringify(product));
+        res.status(201).json({success : true, product, inventory});
 
-        res.status(201).json(newProduct);
-
-    } catch (error) {
-        
-        next(error);
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
     }
+});
 
-}
+export const products =  CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
-export const searchProduct = async (req : Request, res : Response, next : NextFunction) => {
+    try {
+        const keys = await redis.keys(`product:*`);
+        const products = await Promise.all(keys.map(async (key : string) => {
+
+            const data = await redis.get(key);
+            const product = JSON.parse(data!);
+
+            return product
+        }));
+
+        const sortedProducts = products.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        res.status(200).json(sortedProducts.filter(Boolean));
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+})
+
+export const searchProduct = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { query } = req.params;
 
-        const product : IProduct[] | null = await Product.find({
-            $or : [
-                {name : {$regex : new RegExp(query, 'i') }},
-                {category : {$regex : new RegExp(query, 'i') }}
-            ]
-        });
+        const keys = await redis.keys(`product:*`);
+        const products = await Promise.all(keys.map(async (key: string) => {
 
-        if(!product) return res.status(404).json({error : 'Product not found'});
+            const productData = await redis.get(key);
+            const product = JSON.parse(productData!);
+
+            const regex = new RegExp(query, 'i');
+            if(regex.test(product.name) || regex.test(product.category)) {
+                return product;
+            }
+        }));
+
+        res.status(200).json(products.filter(Boolean));
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const singleProduct = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const { id : productId } = req.params;
+
+        const data = await redis.get(`product:${productId}`);
+        const product = JSON.parse(data!);
 
         res.status(200).json(product);
 
-    } catch (error) {
-        
-        next(error);
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
     }
+});
 
-}
-
-export const products = async (req : Request, res : Response, next : NextFunction) => {
+export const editProductInfo = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
     try {
-        const { page, limit } = req.query;
-
-        const NPage = Number(page);
-        const NLimit = Number(limit);
-
-        const startIndex = (NPage -1) * NLimit;
-        const endIndex = NPage * NLimit;
-
-        const results = <IPagination>{}
-
-        if(endIndex < await Product.countDocuments().exec()) results.next = { page : NPage + 1, limit : NLimit }
-
-        if(startIndex > 0) results.previous = { page : NPage - 1, limit : NLimit }
-
-        results.result = await Product.find().select('-updatedAt -__v').limit(NLimit).skip(startIndex);
-
-        if(!products) return res.status(404).json({error : 'Product not found'});
-
-        res.status(200).json(results);
-
-    } catch (error) {
-        
-        next(error);
-    }
-
-}
-
-export const singleProduct = async (req : Request, res : Response, next : NextFunction) => {
-
-    try {
-        const { id: productId } = req.params;
-
-        const products : IProduct | null = await Product.findById(productId).select('-updatedAt -__v');
-        const inventory : IInventory | null = await Inventory.findOne({productId : products._id});
-
-        if(inventory.availableQuantity === 0) return res.status(404).json({error : 'The product is not available in stock'}); 
-
-        if(!products) return res.status(404).json({error : 'Product not found'});
-
-        res.status(200).json(products);
-
-    } catch (error) {
-        
-        next(error);
-    }
-
-}
-
-export const editProduct = async (req : Request, res : Response, next : NextFunction) => {
-
-    try {
-        const { name, price, description, category, color, size, availableQuantity } = req.body;
-        const { id: productId } = req.params;
-        const ownerId = req.user._id;
+        const { name, price, description, images, category, color, size } = req.body as IProductModel;
+        const { id : productId } = req.params;
+        const userId = req.user?._id;
 
         const product = await Product.findById(productId);
+        if(product?.user.toString() !== userId.toString()) return next(new ErrorHandler('Access denied only owner can access this resource', 400));
 
-        if(product.user.toString() !== ownerId.toString()) return res.status(401).json({error : 'Access denied - cannot edit others products'});
 
-        product.name = name || product.name;
-        product.price = price || product.price;
-        product.description = description || product.description;
-        product.category = category || product.category;
-        product.color = color || product.color;
-        product.size = size || product.size;
-
-        const available : IInventory = await Inventory.findOne({productId : product._id});
-
-        available.availableQuantity = availableQuantity || available.availableQuantity;
-
-        await Promise.all([product.save(), available.save()]);
-
-        res.status(200).json(product);
-
-    } catch (error) {
         
-        next(error);
-    }
 
-}
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});

@@ -40,6 +40,32 @@ export interface IRoleModel extends Document {
     requestedRole : 'seller' | 'admin' | string
 }
 
+export interface IProductModel extends Document {
+    name : string
+    price : number
+    description : string
+    images : {
+        public_id : string,
+        url : string
+    }[]
+    category : string[]| undefined
+    color : string[]| undefined
+    size : string[]| undefined
+    user : IUserModel['_id']
+}
+
+export interface IInventoryModel extends Document {
+    productId : IProductModel['_id']
+    availableQuantity : number
+}
+
+export interface IWishListModel extends Document {
+    user : IUserModel['_id']
+    products : {
+        product : IProductModel['_id']
+    }[],
+}
+
 declare global {
     namespace Express {
         interface Request {
@@ -102,18 +128,6 @@ export interface ITokenOptions {
     secure? : boolean
 }
 
-export interface IProduct extends Document {
-    name : string
-    price : number
-    description : string
-    images? : string[]
-    category : string[]
-    color : string[]
-    size? : string[]
-    user : ObjectId
-    availableProductQuantity : Number
-}
-
 export interface IOrder extends Document {
     user : ObjectId
     products : ObjectId[]
@@ -151,13 +165,6 @@ export interface ICartDocument extends ICart {
     }[]
 }
 
-export interface IWishList extends Document {
-    user : ObjectId
-    products : {
-        product : ObjectId
-    }[],
-}
-
 export interface IWishListDocument extends IWishList {
     products : {
         product : {
@@ -179,11 +186,6 @@ export interface IPagination {
         limit : number
     }
     result : object
-}
-
-export interface IInventory extends Document {
-    productId : ObjectId
-    availableQuantity : number
 }
 
 export interface IReportModel extends Document {

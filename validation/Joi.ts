@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import Joi, { string } from 'joi';
 
 const validator = (schema : Joi.Schema) => (payload : object) => schema.validate(payload, {abortEarly : false});
 
@@ -51,3 +51,16 @@ const accountProfileSchema = Joi.object({
 });
 
 export const validateProfile = validator(accountProfileSchema);
+
+const addProductSchema = Joi.object({
+    name : Joi.string().required(),
+    price : Joi.number().required(),
+    description : Joi.string().required(),
+    images : Joi.array(),
+    category : Joi.array(),
+    color : Joi.array(),
+    size : Joi.array(),
+    availableQuantity : Joi.number().required()
+});
+
+export const validateAddProduct = validator(addProductSchema);

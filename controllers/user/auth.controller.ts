@@ -77,6 +77,8 @@ export const login = CatchAsyncError(async (req : Request, res : Response, next 
         const isPasswordMatch = await user?.comparePassword(password);
 
         if(!user || !isPasswordMatch) return next(new ErrorHandler('Invalid email or password', 400));
+        
+        if(user?.isBan) return next(new ErrorHandler('This account has been banned please contact with admins', 400));
 
         sendToken(user, 200, res);
 
