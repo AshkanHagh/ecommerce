@@ -40,6 +40,11 @@ export interface IRoleModel extends Document {
     requestedRole : 'seller' | 'admin' | string
 }
 
+export interface IReportModel extends Document {
+    user : IUserModel['_id']
+    reportersId : IUserModel['_id'][]
+}
+
 export interface IProductModel extends Document {
     name : string
     price : number
@@ -72,6 +77,16 @@ export interface ICartModel extends Document {
         product : IProductModel['_id']
         quantity : number
     }[],
+}
+
+export interface IOrderModel extends Document {
+    user : IUserModel['_id']
+    products : IProductModel['_id']
+    quantity : number
+    totalPrice? : number
+    status : 'pending' | 'processing' | 'shipped' | 'delivered'
+    address : IAddressModel['_id']
+    paymentRefId : number
 }
 
 declare global {
@@ -131,6 +146,23 @@ export interface ICartMap {
     quantity : number       
 }
 
+export interface IPaymentQuery {
+    Authority : string
+    Status : string
+}
+
+export interface IOrderMap {
+    _id : IOrderModel['_id']
+    name : string
+    price : number
+    totalPrice : number
+    status : string
+}
+
+export interface IOrderStatusBody {
+    status : 'pending' | 'processing' | 'shipped' | 'delivered'
+}
+
 export interface IActivationToken {
     token : string
     activationCode : string
@@ -149,46 +181,6 @@ export interface ITokenOptions {
     secure? : boolean
 }
 
-export interface IOrder extends Document {
-    user : ObjectId
-    products : ObjectId[]
-    totalPrice? : number
-    status : string
-    address : ObjectId
-}
-
-export interface IOrderDocument extends IOrder {
-    products : {
-        name : string
-        price : number
-        description : string
-        images : string
-    }[]
-}
-
-export interface ICartDocument extends ICart {
-    products? : {
-        product : {
-            _id? : ObjectId
-            name : string,
-            price : number,
-            description : string
-        },
-        quantity : number
-    }[]
-}
-
-export interface IWishListDocument extends IWishList {
-    products : {
-        product : {
-            _id : ObjectId
-            name : string,
-            price : number,
-            description : string
-        }
-    }[]
-}
-
 export interface IPagination {
     next : {
         page : number
@@ -199,11 +191,6 @@ export interface IPagination {
         limit : number
     }
     result : object
-}
-
-export interface IReportModel extends Document {
-    user : ObjectId
-    reportersId : ObjectId[]
 }
 
 export interface IComment extends Document {
@@ -217,25 +204,4 @@ export interface IComment extends Document {
         profilePic : string
     }[]
     likes? : ObjectId[]
-}
-
-export interface ICommentDocument extends IComment {
-    replies? : {
-        profilePic : string
-        fullName : string
-        text : string
-    }[]
-    text : string
-    senderId : {
-        _id? : ObjectId
-        fullName : string
-        profilePic : string
-    }
-}
-
-export interface IInventoryDocument extends IInventory {
-    productId? : {
-        _id : ObjectId
-        name : string
-    }
 }

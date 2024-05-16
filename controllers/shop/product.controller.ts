@@ -5,7 +5,7 @@ import { redis } from '../../db/redis';
 import Product from '../../models/shop/product.model';
 import Inventory from '../../models/shop/inventory.model';
 import type { IInventoryModel, IProductModel } from '../../types';
-import { validateAddProduct } from '../../validation/Joi';
+import { validateAddProduct, validateUpdateProduct } from '../../validation/Joi';
 
 export const createProduct = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
@@ -108,6 +108,9 @@ export const editProductInfo = CatchAsyncError(async (req : Request, res : Respo
     try {
         const { name, price, description, category, color, size } = req.body as IProductModel;
         const { availableQuantity } = req.body as IInventoryModel;
+
+        const {error, value} = validateUpdateProduct(req.body);
+        if(error) return next(new ErrorHandler(error.message, 400));
 
         const { id : productId } = req.params;
         const userId = req.user?._id;

@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { checkReport } from '../middlewares/reportChecker';
 import { authorizeRoles, isAuthenticated } from '../middlewares/auth';
 import { createProduct, editProductInfo, products, searchProduct, singleProduct } from '../controllers/shop/product.controller';
 import { addToWishList, removeWishList, wishList } from '../controllers/shop/wishList.controller';
 import { addToCart, cart, removeCart } from '../controllers/shop/cart.controller';
+import { getPayment, orderDetail, updateOrderStatus, verifyPayment } from '../controllers/shop/order.controller';
 
 const router = Router();
 
@@ -21,8 +21,17 @@ router.get('/cart', isAuthenticated, cart);
 
 router.patch('/cart/:id', isAuthenticated, removeCart);
 
+// payment || orders
+router.get('/order/payment', isAuthenticated, getPayment);
+
+router.post('/order/payment/verify', isAuthenticated, verifyPayment);
+
+router.get('/order/payment/detail/:id', isAuthenticated, orderDetail);
+
+router.patch('/order/status/:id', [isAuthenticated, authorizeRoles('admin' || 'seller')], updateOrderStatus);
+
 // Product
-router.post('/', [isAuthenticated, authorizeRoles('seller' && 'admin')], createProduct);
+router.post('/', [isAuthenticated, authorizeRoles('seller' || 'admin')], createProduct);
 
 router.get('/', products);
 
@@ -30,6 +39,6 @@ router.get('/search/:query', searchProduct);
 
 router.get('/:id', singleProduct);
 
-router.patch('/:id', [isAuthenticated, authorizeRoles('seller' && 'admin')], editProductInfo);
+router.patch('/:id', [isAuthenticated, authorizeRoles('seller' || 'admin')], editProductInfo);
 
 export default router;

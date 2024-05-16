@@ -1,123 +1,70 @@
 import type { NextFunction, Request, Response } from 'express';
+import { CatchAsyncError } from '../../middlewares/catchAsyncError';
+import ErrorHandler from '../../utils/errorHandler';
 import Cart from '../../models/shop/cart.model';
 import Order from '../../models/shop/order.model';
 import Inventory from '../../models/shop/inventory.model';
-import type { IAddress, ICartDocument, IInventory, IOrder, IOrderDocument } from '../../types';
 import ZarinpalCheckout from 'zarinpal-checkout';
 import Address from '../../models/address.model';
+import type { IOrderMap, IOrderStatusBody } from '../../types';
+import { redis } from '../../db/redis';
 
-let zarinpal = ZarinpalCheckout.create(process.env.MERCHANT_ID, true);
+let zarinpal = ZarinpalCheckout.create(process.env.MERCHANT_ID as string, true);
 
-
-export const orderDetail = async (req : Request, res : Response, next : NextFunction) => {
-
-    try {
-        const orderId = req.params.id;
-
-        const order : IOrderDocument = await Order.findById(orderId).populate('products address').select('products totalPrice status address');
-
-        if(!order) return res.status(404).json({ error: 'Order not found' });
-
-        const mappedOrder = order.products.map(product => {
-
-            return {
-                name : product.name,
-                price : product.price,
-                description : product.description,
-                images : product.images,
-                totalPrice : order.totalPrice,
-                status : order.status,
-                address : order.address
-            }
-        })
-
-        res.status(200).json(mappedOrder);
-
-    } catch (error) {
-
-        next(error);
-    }
-
-}
-
-export const updateOrder = async (req : Request, res : Response, next : NextFunction) => {
+export const getPayment =CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
     try {
-        const { id: orderId } = req.params;
-        const { status } = req.body;
 
-        const order : IOrder | null = await Order.findById(orderId);
+        const {_id : userId, email} = req.user!;
 
-        if(!order) return res.status(404).json({error : 'Order not found'});
+        const cart = await Cart.findOne({user : userId}).populate({path : 'products', populate : {path : 'product', model : 'Product'}});
+        if(cart!.products.length < 1 || !cart) return next(new ErrorHandler('Cart is empty', 400));
 
-        order.status = status;
-
-        await order.save();
-
-        res.status(200).json({message : 'Order Updated', status : order.status});
-
-    } catch (error) {
-        
-        next(error);
-    }
-
-}
-
-export const getPayment = async (req : Request, res : Response, next : NextFunction) => {
-
-    try {
-        const { _id: userId, email } = req.user;
-        
-        const cart : ICartDocument | null = await Cart.findOne({user : userId}).populate('products.product');
-
-        let totalPrice : number = 0;
-
-        for (const item of cart.products) {
-            totalPrice += item.product.price * item.quantity
+        let totalPrice = 0;
+        for(const product of cart.products) {
+            totalPrice += product.product.price * product.quantity;
         }
 
         const payment = await zarinpal.PaymentRequest({
             Amount : totalPrice,
-            CallbackURL : 'http://localhost:5000/api/product/payment/verify',
+            CallbackURL : 'http://localhost:7319/api/v1/product/order/payment/verify',
             Description : 'Thank you for trusting the website, the product will be sent immediately upon payment',
             Email : email,
             Mobile : '',
         });
 
+        // res.redirect(payment.url);
         res.status(200).json(payment);
 
-    } catch (error) {
-        
-        next(error);
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
     }
+});
 
-}
-
-/* To use this you most copy the url that response in localhost:5000/api/product/payment and past to google after that you most accept or deny
-payment after that you redirect to a link but link show nothing you most copy the url and past to your postman */
-export const verifyPayment = async (req : Request, res : Response, next : NextFunction) => {
+export const verifyPayment = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
     try {
-        const { Authority, Status } = req.query;
-        const userId = req.user._id;
+        const { Authority, Status } = req.query as any;
+        const userId = req.user?._id;
 
-        const cart : ICartDocument | null = await Cart.findOne({user : userId}).populate('products.product');
+        const cart = await Cart.findOne({user : userId}).populate({path : 'products', populate : {path : 'product', model : 'Product'}});
+        if(cart!.products.length < 1 || !cart) return next(new ErrorHandler('Cart is empty', 400));
 
         let totalPrice = 0;
-
-        for (const item of cart.products) {
-            totalPrice += item.product.price * item.quantity;
-
-            const inventory = await Inventory.findOne({productId : item.product._id});
-
-            if(!inventory) return res.status(404).json({error : 'Inventory not found'});
-
-            if(inventory.availableQuantity == 0 || inventory.availableQuantity < item.quantity)
-                return res.status(400).json({error : 'Not enough available products'});
+        let quantity = 0;
+        for(const product of cart.products) {
+            
+            totalPrice += product.product.price * product.quantity;
+            quantity += product.quantity;
+            
+            const inventory = await Inventory.findOne({productId : product.product});
+            
+            if(!inventory) return next(new ErrorHandler('Inventory not foudn', 400));
+            if(inventory?.availableQuantity == 0 || inventory.availableQuantity < product.quantity)
+                return next(new ErrorHandler('not enough available products', 400));
         }
 
         if(Status == 'NOK') return res.status(200).json({error : 'Payment failed!'});
-
         const payment = await zarinpal.PaymentVerification({
             Amount : totalPrice,
             Authority
@@ -125,36 +72,65 @@ export const verifyPayment = async (req : Request, res : Response, next : NextFu
 
         if(payment.status !== 100) return res.status(200).json({error : 'Payment failed!'});
 
-        const address : IAddress | null = await Address.findOne({user : userId});
+        const address = await Address.findOne({user : userId});
+        if(!address) return next(new ErrorHandler('Address not found. please add a address', 400));
 
-        if(!address) return res.status(404).json({error : 'Address not found, Please update your address'});
-    
-        const order = new Order({
-                
-            user: userId,
-            products: cart.products.map(item => item.product),
-            totalPrice, status: 'pending', address
+        const order = await Order.create({
+            user : userId, products: cart.products.map(item => item.product), totalPrice, status : 'pending', address : address._id,
+            paymentRefId : payment.RefID, quantity
         });
-    
+
         await order.save();
-    
-        await Cart.findByIdAndUpdate(cart._id, {
-            $pull : {products : {product : order.products}}
-        });
-    
+
+        await Cart.findOneAndUpdate({user : userId}, {$pull : {products : {product : order.products}}});
+        await redis.del(`cart:${userId}`);
+
         for (const item of cart.products) {
+            const inventory = await Inventory.findOne({productId : item.product._id});
+            inventory!.availableQuantity -= item.quantity;
     
-            const inventory : IInventory | null = await Inventory.findOne({productId : item.product._id});
-            inventory.availableQuantity -= item.quantity;
-    
-            await inventory.save();
+            await inventory!.save();
          }
-    
-        res.status(200).json({message: `Order placed successfully ${payment.RefID}`});
 
-    } catch (error) {
-        
-        next(error);
+        res.status(200).redirect(`http://localhost:7319/api/v1/product/order/payment/detail/${payment.RefID}`);
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
     }
+});
 
-}
+export const orderDetail = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const { id : refId } = req.params;
+        
+        const order = await Order.findOne({paymentRefId : refId}).populate('products');
+
+        const mappedData = order!.products.map((product : IOrderMap) => {
+            return {
+                name : product.name, price : product.price, status : order?.status,
+                
+            }
+        });
+
+        res.status(200).json({success : true, detail : {_id : order?._id, totalPrice : order?.totalPrice, 
+            quantity : order?.quantity, order : mappedData}});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const updateOrderStatus = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const { id : orderId } = req.params;
+        const { status } = req.body as IOrderStatusBody;
+        
+        const order = await Order.findByIdAndUpdate(orderId, {$set : {status}});
+        res.status(200).json({success : true, order});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});

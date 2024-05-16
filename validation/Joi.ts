@@ -64,3 +64,16 @@ const addProductSchema = Joi.object({
 });
 
 export const validateAddProduct = validator(addProductSchema);
+
+const updateProductSchema = Joi.object({
+    name : Joi.string().required(),
+    price : Joi.number().required(),
+    description : Joi.string().required(),
+    images : Joi.array(),
+    category : Joi.array(),
+    color : Joi.array(),
+    size : Joi.array(),
+    availableQuantity : Joi.number().required()
+});
+
+export const validateUpdateProduct = validator(updateProductSchema);

@@ -1,32 +1,25 @@
-import { Schema, model } from 'mongoose';
-import type { IOrder } from '../../types';
+import { Model, Schema, model } from 'mongoose';
+import type { IOrderModel } from '../../types';
 
-const OrderSchema = new Schema({
+const OrderSchema = new Schema<IOrderModel>({
     user: {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+        type: Schema.Types.ObjectId, ref: 'User', required: true
     },
     products: [{
-        type: Schema.Types.ObjectId,
-        ref: 'Product',
-        required: true
+        type: Schema.Types.ObjectId, ref: 'Product', required: true
     }],
-    totalPrice: {
-        type: Number
-    },
+    quantity : Number,
+    totalPrice: Number,
     status: {
-        type: String,
-        enum: ['pending', 'processing', 'shipped', 'delivered'],
-        required: true
+        type: String, enum: ['pending', 'processing', 'shipped', 'delivered'], required: true
     },
     address: {
-        type: Schema.Types.ObjectId,
-        ref: 'Address',
-        required: true
-    }
+        type: Schema.Types.ObjectId, ref: 'Address', required: true
+    },
+    paymentRefId : Number
+
 }, { timestamps: true });
 
-const Order = model<IOrder>('Order', OrderSchema);
+const Order : Model<IOrderModel> = model('Order', OrderSchema);
 
 export default Order;
