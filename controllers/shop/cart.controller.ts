@@ -1,112 +1,106 @@
 import type { NextFunction, Request, Response } from 'express';
-import Cart from '../../models/shop/cart.model';
-import WishList from '../../models/shop/whishList.model';
+import { CatchAsyncError } from '../../middlewares/catchAsyncError';
+import ErrorHandler from '../../utils/errorHandler';
+import type { ICartBody, ICartMap, ICartModel, IProductModel } from '../../types';
 import Inventory from '../../models/shop/inventory.model';
-import type { ICart, ICartDocument, IInventory } from '../../types';
+import WishList from '../../models/shop/whishList.model';
+import Cart from '../../models/shop/cart.model';
+import { redis } from '../../db/redis';
 
-export const addToCart = async (req : Request, res : Response, next : NextFunction) => {
+export const addToCart = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
     try {
-        const { productId, quantity } = req.body;
-        const userId = req.user._id;
+        const { id : productId } = req.params;
+        const { quantity } = req.body as ICartBody;
+        const userId = req.user?._id;
 
-        let cart : ICart | null = await Cart.findOne({user : userId});
+        const inventory = await Inventory.findOne({productId});
+        if(inventory!.availableQuantity <= quantity) return next(new ErrorHandler('Not enough product available', 400));
 
-        const inventory : IInventory | null = await Inventory.findOne({productId});
+        await WishList.findOneAndUpdate({user : userId}, {$pull : {products : {product : productId}}});
 
-        if(inventory.availableQuantity <= quantity) return res.status(200).json({error : 'Not enough products available'});
-
-        await WishList.findOneAndUpdate({user : userId}, {
-            $pull : {products : {product : productId}}
-        });
-
+        let cart = await Cart.findOne({user : userId});
         if(!cart) {
-            cart = await Cart.create({user : userId});
+            const productToAdd = { product: productId, quantity: quantity };
+            cart = await Cart.create({user: userId, products : [productToAdd]});
+
+            return res.status(200).json({success : true, message : 'Product added to your cart', cart});
         }
 
-        const existingProduct = cart.products.findIndex(item => item.product.toString() === productId);
+        const isProductExistsOnCart = cart.products.findIndex(item => item.product.toString() === productId);
 
-        if(existingProduct !== -1) {
-
-            cart.products[existingProduct].quantity+=quantity
+        if(isProductExistsOnCart !== -1) {
+            cart.products[isProductExistsOnCart].quantity+=quantity;
         }else {
             cart.products.push({product : productId, quantity});
         }
 
         await cart.save();
 
-        res.status(200).json({message : 'Product added to cart'});
+        return res.status(200).json({success : true, message : 'Product added to your cart', cart});
 
-    } catch (error) {
-        
-        next(error);
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
     }
+});
 
-}
-
-export const removeCart = async (req : Request, res : Response, next : NextFunction) => {
+export const cart = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
     try {
-        const { productId } = req.body;
-        const userId = req.user._id;
+        const userId = req.user?._id;
 
-        const cart : ICart | null = await Cart.findOne({user : userId});
+        const cache = await redis.get(`cart:${userId}`);
+        if(cache) {
 
-        if(!cart) return res.status(404).json({error : 'Product not found'});
-
-        const productIndex = cart.products.findIndex(item => item.product.toString() === productId);
-
-        if(productIndex !== -1) {
-
-            if(cart.products[productIndex].quantity > 1) {
-
-                cart.products[productIndex].quantity -= 1;
-
-            }else {
-                cart.products.splice(productIndex, 1);
-            }
+            const cart = JSON.parse(cache);
+            return res.status(200).json({success : true, cart});
         }
 
-        await cart.save();
+        const cart = await Cart.findOne({user : userId}).populate({
+            path : 'products', populate : {path : 'product', model : 'Product'}
+        });
 
-        res.status(200).json({message : 'Product removed from cart'});
-
-    } catch (error) {
-        
-        next(error);
-    }
-
-}
-
-export const getCart = async (req : Request, res : Response, next : NextFunction) => {
-
-    try {
-        const userId = req.user._id;
-
-        const cart : ICartDocument = await Cart.findOne({user : userId}).populate({
-            path : 'products',
-            populate : {
-                path : 'product',
-                model : 'Product'
-            }
-        }).select('products');        
-
-        const mappedCart = cart.products.map(product => {
+        const mappedData = cart?.products.map((products : ICartMap) => {
+            const product = products.product;
+            const totalPrice = products.quantity * product.price;
 
             return {
-                cartId : cart._id,
-                name: product.product.name,
-                price: product.product.price,
-                description : product.product.description,
-                quantity: product.quantity
-            };
-        });        
+                _id : cart._id, name : product.name, price : product.price, images : product.images, 
+                quantity : products.quantity, totalPrice
+            }
+        });
 
-        res.status(200).json(mappedCart);
+        await redis.set(`cart:${userId}`, JSON.stringify(mappedData), 'EX', 1800);
 
-    } catch (error) {
-        
-        next(error);
+        res.status(200).json({success : true, cart : mappedData});
+
+    } catch (error : any) {
+        return next (new ErrorHandler(error.message, 400));
     }
+})
 
-}
+export const removeCart = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const { id : productId } = req.params;
+        const userId = req.user?._id;
+
+        const cart = await Cart.findOne({user : userId});
+
+        const productIndex = cart?.products.findIndex(product => product.product.toString() === productId);
+
+        if(productIndex !== -1 && cart!.products[productIndex!].quantity > 1) {
+            cart!.products[productIndex!].quantity -= 1;
+        }else {
+            cart?.products.splice(productIndex!, 1);
+        }
+
+        await cart?.save();
+        await redis.del(`cart:${userId}`);
+
+        res.status(200).json({success : true, cart});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});

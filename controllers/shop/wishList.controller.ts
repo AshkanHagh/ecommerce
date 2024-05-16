@@ -48,12 +48,11 @@ export const wishList = CatchAsyncError(async (req : Request, res : Response, ne
         const mappedData = wishList?.products.map(product => {
             
             return {
-                _id : wishList._id, name : product.product.name, price : product.product.price,
-                description : product.product.description, images : product.product.images
+                _id : wishList._id, name : product.product.name, price : product.product.price, images : product.product.images
             }
         });
 
-        if(wishList!.products.length > 0 ) await redis.set(`wishList:${userId}`, JSON.stringify(mappedData), 'EX', 3600);
+        if(wishList!.products.length > 0 ) await redis.set(`wishList:${userId}`, JSON.stringify(mappedData), 'EX', 1800);
 
         return res.status(200).json({success : true, wishList : mappedData});
 
@@ -69,7 +68,6 @@ export const removeWishList = CatchAsyncError(async (req : Request, res : Respon
         const userId = req.user?._id;
 
         await WishList.findOneAndUpdate({user : userId}, {$pull : {products : {product : productId}}});
-
         await redis.del(`wishList:${userId}`);
 
         res.status(200).json({success : true, message : 'Product removed from your wishList'});

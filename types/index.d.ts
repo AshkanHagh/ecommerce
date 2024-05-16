@@ -66,6 +66,14 @@ export interface IWishListModel extends Document {
     }[],
 }
 
+export interface ICartModel extends Document {
+    user : IUserModel['_id']
+    products : {
+        product : IProductModel['_id']
+        quantity : number
+    }[],
+}
+
 declare global {
     namespace Express {
         interface Request {
@@ -110,6 +118,19 @@ export interface IRoleRequests {
     requestedRole : string
 }
 
+export interface ICartBody {
+    quantity : number
+}
+
+export interface ICartMap {
+    product : {
+        name : string
+        price : number
+        images : string[]
+    }
+    quantity : number       
+}
+
 export interface IActivationToken {
     token : string
     activationCode : string
@@ -143,14 +164,6 @@ export interface IOrderDocument extends IOrder {
         description : string
         images : string
     }[]
-}
-
-export interface ICart extends Document {
-    user : ObjectId
-    products : {
-        product : ObjectId
-        quantity : number
-    }[],
 }
 
 export interface ICartDocument extends ICart {

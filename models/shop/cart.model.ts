@@ -1,27 +1,21 @@
-import { Schema, model } from 'mongoose';
-import type { ICart } from '../../types';
+import { Model, Schema, model } from 'mongoose';
+import type { ICartModel } from '../../types';
 
-const CartSchema = new Schema({
+const CartSchema = new Schema<ICartModel>({
     user : {
-        type : Schema.Types.ObjectId,
-        ref : 'User',
-        required : true
+        type : Schema.Types.ObjectId, ref : 'User', required : true
     },
     products : [{
         product : {
-            type : Schema.Types.ObjectId,
-            ref : 'Product',
-            required : true
+            type : Schema.Types.ObjectId, ref : 'Product', required : true
         },
         quantity : {
-            type : Number,
-            default : 1
-        },
-        default : []
+            type : Number, default : 1
+        }
     }]
 
 }, {timestamps : true});
 
-const Cart = model<ICart>('Cart', CartSchema);
+const Cart : Model<ICartModel> = model('Cart', CartSchema);
 
 export default Cart;
