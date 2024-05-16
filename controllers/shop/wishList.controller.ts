@@ -12,9 +12,8 @@ export const addToWishList = CatchAsyncError(async (req : Request, res : Respons
 
         let wishList = await WishList.findOne({user : userId});
         if(!wishList) {
+            
             wishList = await WishList.create({user : userId, products : {product : productId}});
-            await redis.set(`wishList:${userId}`, JSON.stringify(wishList), 'EX', 3600);
-
             return res.status(200).json({success : true, message : 'Product added to your wishList', wishList});
         }
 
@@ -49,15 +48,12 @@ export const wishList = CatchAsyncError(async (req : Request, res : Response, ne
         const mappedData = wishList?.products.map(product => {
             
             return {
-                _id : wishList._id,
-                name : product.product.name,
-                price : product.product.price,
-                description : product.product.description,
-                images : product.product.images
+                _id : wishList._id, name : product.product.name, price : product.product.price,
+                description : product.product.description, images : product.product.images
             }
         });
 
-        await redis.set(`wishList:${userId}`, JSON.stringify(mappedData), 'EX', 3600);
+        if(wishList!.products.length > 0 ) await redis.set(`wishList:${userId}`, JSON.stringify(mappedData), 'EX', 3600);
 
         return res.status(200).json({success : true, wishList : mappedData});
 

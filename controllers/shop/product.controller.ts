@@ -6,13 +6,12 @@ import Product from '../../models/shop/product.model';
 import Inventory from '../../models/shop/inventory.model';
 import type { IInventoryModel, IProductModel } from '../../types';
 import { validateAddProduct } from '../../validation/Joi';
-import {v2 as cloudinary} from 'cloudinary';
 
 export const createProduct = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { name, price, description, category, color, size } = req.body as IProductModel;
-        const { images } = req.body as any;
+        const { images } = req.body;
         const { availableQuantity : quantity } = req.body as IInventoryModel;
 
         const {error, value} = validateAddProduct(req.body);
@@ -21,28 +20,6 @@ export const createProduct = CatchAsyncError(async (req : Request, res : Respons
         const product = await Product.create({
             name, price, description, category, color, size, user : req.user?._id
         });
-
-        if (images && images.length > 0) {
-            const uploadedImages = [];
-
-            for (const image of images) {
-
-                try {
-                    const myCloud = await cloudinary.uploader.upload(image, {
-                        folder: 'Images'
-                    });
-                    uploadedImages.push({
-                        public_id: myCloud.public_id,
-                        url: myCloud.secure_url
-                    });
-                } catch (error : any) {
-                    return next(new ErrorHandler(error.message, 400));
-                }
-            }
-
-            product.images = uploadedImages;
-            await product.save();
-        }
 
         const inventory = await Inventory.create({
             productId : product._id, availableQuantity : quantity
@@ -60,17 +37,27 @@ export const products =  CatchAsyncError(async (req : Request, res : Response, n
 
     try {
         const keys = await redis.keys(`product:*`);
-        const products = await Promise.all(keys.map(async (key : string) => {
+        if(keys.length > 0) {
 
-            const data = await redis.get(key);
-            const product = JSON.parse(data!);
+            const products = await Promise.all(keys.map(async (key : string) => {
 
-            return product
-        }));
+                const data = await redis.get(key);
+                const product = JSON.parse(data!);
+    
+                return product
+            }));
+    
+            const sortedProducts = products.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            res.status(200).json(sortedProducts.filter(Boolean));
+        }
 
-        const sortedProducts = products.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const products = await Product.find().sort({createdAt : -1});
 
-        res.status(200).json(sortedProducts.filter(Boolean));
+        products.map(async (product : IProductModel) => {
+            await redis.set(`product:${product._id}`, JSON.stringify(product));
+        });
+
+        res.status(200).json(products);
 
     } catch (error : any) {
         return next(new ErrorHandler(error.message, 400));
@@ -119,15 +106,24 @@ export const singleProduct = CatchAsyncError(async (req : Request, res : Respons
 export const editProductInfo = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
     try {
-        const { name, price, description, images, category, color, size } = req.body as IProductModel;
+        const { name, price, description, category, color, size } = req.body as IProductModel;
+        const { availableQuantity } = req.body as IInventoryModel;
+
         const { id : productId } = req.params;
         const userId = req.user?._id;
 
-        const product = await Product.findById(productId);
+        const product = await Product.findByIdAndUpdate(productId, {$set : {name, price, description, category, color, size}});
         if(product?.user.toString() !== userId.toString()) return next(new ErrorHandler('Access denied only owner can access this resource', 400));
 
+        // product!.name = name || product!.name; product!.price = price || product!.price; 
+        // product!.description = description || product!.description; product!.category = category || product!.category; 
+        // product!.color = color || product!.color; product!.size = size || product!.size;
 
-        
+        if(availableQuantity) await Inventory.findOneAndUpdate({productId : product?._id}, {$set : {availableQuantity}});
+
+        await redis.set(`product:${product?._id}`, JSON.stringify(product));
+
+        res.status(200).json({success : true, product});
 
     } catch (error : any) {
         return next(new ErrorHandler(error.message, 400));
