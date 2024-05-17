@@ -1,51 +1,30 @@
-import { Schema, model } from 'mongoose';
-import type { IComment } from '../../types';
+import { Model, Schema, model } from 'mongoose';
+import type { ICommentModel } from '../../types';
 
-const CommentSchema = new Schema({
+const CommentSchema = new Schema<ICommentModel>({
     productId : {
-        type : Schema.Types.ObjectId,
-        ref : 'Product',
-        required : true,
+        type : Schema.Types.ObjectId, ref : 'Product', required : [true, 'ProductId must provided'],
     },
     senderId : {
-        type : Schema.Types.ObjectId,
-        ref : 'User',
-        required : true
+        type : Schema.Types.ObjectId, ref : 'User', required : [true, 'SenderId must provided']
     },
     text : {
-        type : String,
-        maxLength : 255,
-        required : true
+        type : String, maxLength : 255, required : [true, 'Text must provided']
     },
-    replies : [
-        {
-            userId : {
-                type : Schema.Types.ObjectId,
-                ref : 'User',
-                required : true
-            },
-            text : {
-                type : String,
-                required : true,
-                maxlength : 255
-            },
-            fullName : {
-                type : String,
-                required : true
-            },
-            profilePic : {
-                type : String,
-                default : ''
-            }
-        }
-    ],
+    replies : [{
+        userId : {
+            type : Schema.Types.ObjectId, ref : 'User'
+        },
+        replayText : String
+    }],
     likes : [{
-        type : Schema.Types.ObjectId,
-        ref : 'User'
+        userId : {
+            type : Schema.Types.ObjectId, ref : 'User'
+        },
     }]
 
 }, {timestamps : true});
 
-const Comment = model<IComment>('Comment', CommentSchema);
+const Comment : Model<ICommentModel> = model('Comment', CommentSchema);
 
 export default Comment;

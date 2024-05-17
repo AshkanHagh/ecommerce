@@ -1,165 +1,145 @@
-import type { Request, Response, NextFunction } from 'express';
+import { type Request, type Response, type NextFunction, text } from 'express';
+import { CatchAsyncError } from '../../middlewares/catchAsyncError';
+import ErrorHandler from '../../utils/errorHandler';
+import type { ICommentBody, ICommentMap, IUserModel } from '../../types';
 import Comment from '../../models/shop/comment.model';
-import type { IComment, ICommentDocument } from '../../types';
+import { redis } from '../../db/redis';
 
-export const newComment = async (req : Request, res : Response, next : NextFunction) => {
+export const createComment = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
     try {
-        const { text } = req.body;
-        const { id: productId } = req.params;
-        const userId = req.user._id;
+        const { text } = req.body as ICommentBody;
+        const { id : productId } = req.params;
+        const senderId = req.user?._id;
 
-        const comment : IComment | null = new Comment({productId, text});
+        const comment = await Comment.create({productId, senderId, text});
+        res.status(200).json({success : true, comment});
 
-        comment.senderId = userId;
-
-        await comment.save();
-
-        res.status(200).json({userId, fullName : req.user.fullName, profilePic : req.user.profilePic, text});
-
-    } catch (error) {
-        
-        next(error);
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
     }
+});
 
-}
-
-export const replay = async (req : Request, res : Response, next : NextFunction) => {
-
-    try {
-        const { text } = req.body; 
-        const { id: commentId } = req.params;
-        const { _id, fullName, profilePic } = req.user;
-
-        const comment : IComment | null = await Comment.findOne({_id : commentId});
-
-        comment.replies.push({
-            userId : _id,
-            text,
-            fullName,
-            profilePic
-        });
-
-        await comment.save();
-
-        res.status(200).json({userId : _id, fullName, profilePic, text});
-
-    } catch (error) {
-        
-        next(error);
-    }
-
-}
-
-export const editComment = async (req : Request, res : Response, next : NextFunction) => {
+export const comments = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
     try {
-        const { text } = req.body;
-        const { id: commentId } = req.params;
-        const currentUser = req.user._id;
+        const { id : productId } = req.params;
 
-        const comment : IComment | null = await Comment.findById(commentId);
-
-        if(comment.senderId.toString() !== currentUser.toString()) return res.status(400).json({error : 'Cannot edit others comment'});
-
-        comment.text = text;
-
-        await comment.save();
-
-        res.status(200).json({message : 'Comment edited', text});
- 
-    } catch (error) {
-        
-        next(error);
-    }
-
-}
-
-export const deleteComment = async (req : Request, res : Response, next : NextFunction) => {
-
-    try {
-        const { id: commentId } = req.params;
-        const currentUser = req.user._id;
-
-        const comment : IComment | null = await Comment.findById(commentId);
-
-        if(comment.senderId.toString() !== currentUser.toString()) return res.status(400).json({error : 'Cannot delete others comment'});
-
-        await comment.deleteOne();
-
-        res.status(200).json({message : 'Comment has been deleted'});
-
-    } catch (error) {
-        
-        next(error);
-    }
-
-}
-
-export const likeComment = async (req : Request, res : Response, next : NextFunction) => {
-
-    try {
-        const { id: commentId } = req.params;
-        const currentUser = req.user._id;
-
-        const comment : IComment | null = await Comment.findById(commentId);
-
-        const isLiked = comment.likes.includes(currentUser);
-
-        if(isLiked) {
-
-            comment.likes.splice(currentUser);
-            await comment.save();
-
-            res.status(200).json({message : 'Comment disLiked'});
-
-        }else {
-
-            comment.likes.push(currentUser);
-            await comment.save();
-
-            res.status(200).json({message : 'Comment liked'});
+        const cache = await redis.get(`comments:${productId}`);
+        if(cache) {
+            const comments = JSON.parse(cache);
+            return res.status(200).json({success : true, comments});
         }
 
-    } catch (error) {
-        
-        next(error);
-    }
+        const comments = await Comment.find({productId}).sort({createdAt : -1}).populate({
+            path : 'replies', populate : {path : 'userId', model : 'User'}
+        }).populate('senderId');
+        if(!comments) return next(new ErrorHandler('No comment found. your comment can be first one', 400));
 
-}
+        const comment = comments.map(comments => {
+            const { fullName, email, role } = comments.senderId as IUserModel;
 
-export const getProductComments = async (req : Request, res : Response, next : NextFunction) => {
-
-    try {
-        const { id: productId } = req.params;
-        
-        const comments : ICommentDocument[] = await Comment.find({productId}).populate('senderId');
-
-        const mapped = comments.map(comment => {
-
-            const replay = comment.replies.map(replay => {
-
+            const mappedData = comments.replies?.map((comment : ICommentMap) => {
+                const { fullName, email, role } = comment.userId;
+    
                 return {
-                    profilePic : replay.profilePic,
-                    fullName : replay.fullName,
-                    text : replay.text
+                    _id : comment._id, fullName, email, role, text : comment.replayText
                 }
             });
+    
+            const result = {_id : comments._id, productId : comments.productId, senderId : {fullName, email, role},
+            text : comments.text, likes : comments.likes, replay : mappedData}
+
+            return result
+        })
             
-            return {
-                _id : comment._id,
-                text : comment.text,
-                profilePic : comment.senderId.profilePic,
-                fullName : comment.senderId.fullName,
-                replay
-            }
-        });
+        await redis.set(`comments:${productId}`, JSON.stringify(comment), 'EX', 86400);
 
-        res.status(200).json(mapped);
-
-    } catch (error) {
-        
-        next(error);
+        res.status(200).json({success : true, comment : comment});
+            
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
     }
+});
 
-}
+export const replay = CatchAsyncError(async (req : Request, res : Response,  next : NextFunction) => {
+
+    try {
+        const { id : commentId } = req.params;
+        const { text } = req.body as ICommentBody;
+        const userId = req.user?._id;
+
+        const comment = await Comment.findByIdAndUpdate(commentId, {$push : {replies : {userId, replayText : text}}}, {new : true});
+
+        await redis.set(`comments:${comment?.productId}`, JSON.stringify(comment), 'EX', 86400);
+
+        res.status(200).json({success : true, comment});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const likeComment = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const { id : commentId } = req.params;
+        const userId = req.user?._id;
+
+        const comment = await Comment.findById(commentId);
+
+        const isLiked = comment?.likes?.findIndex(user => user.userId.toString() === userId);
+
+        if(isLiked !== -1) {
+            comment?.likes?.splice(isLiked!, 1);
+
+            await comment?.save();
+            await redis.set(`comments:${comment?.productId}`, JSON.stringify(comment), 'EX', 86400);
+
+            res.status(200).json({success : true, message : 'Comment disLiked successfully'});
+        }else {
+            comment?.likes?.push({userId : userId});
+
+            await comment?.save();
+            await redis.set(`comments:${comment?.productId}`, JSON.stringify(comment), 'EX', 86400);
+
+            res.status(200).json({success : true, message : 'Comment liked successfully'});
+        }
+        
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const editCommentText = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const { text } = req.body as ICommentBody;
+        const { id : commentId } = req.params;
+        const userId = req.user?._id;
+
+        const comment = await Comment.findOneAndUpdate({_id : commentId, senderId : userId}, {$set : {text}}, {new : true});
+        await redis.set(`comments:${comment?.productId}`, JSON.stringify(comment), 'EX', 86400);
+
+        res.status(200).json({success : true, comment});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const deleteComment = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const { id : commentId } = req.params;
+        const userId = req.user?._id;
+
+        const comment = await Comment.findOneAndDelete({_id : commentId, senderId : userId});
+        await redis.del(`comments:${comment?.productId}`);
+
+        res.status(200).json({success : true, message : 'Comment has been deleted'});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});

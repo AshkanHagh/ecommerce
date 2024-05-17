@@ -89,6 +89,19 @@ export interface IOrderModel extends Document {
     paymentRefId : number
 }
 
+export interface ICommentModel extends Document {
+    productId : IProductModel['_id']
+    senderId : IUserModel['_id']
+    text : string
+    replies? : {
+        userId : IUserModel['_id'],
+        replayText : string
+    }[]
+    likes? : {
+        userId : IUserModel['_id']
+    }[]
+}
+
 declare global {
     namespace Express {
         interface Request {
@@ -163,6 +176,29 @@ export interface IOrderStatusBody {
     status : 'pending' | 'processing' | 'shipped' | 'delivered'
 }
 
+export interface ICommentBody {
+    text : string
+}
+
+export interface ICommentMap {
+    _id? : ObjectId
+    userId : {
+        fullName : string
+        email : string
+        role : string
+    }
+    replayText? : string
+}
+
+// export interface ICommentUserMap {
+//     userId : {
+//         _id : IUserModel['_id']
+//         fullName : string
+//         email : string
+//         role : string
+//     }
+// }
+
 export interface IActivationToken {
     token : string
     activationCode : string
@@ -191,17 +227,4 @@ export interface IPagination {
         limit : number
     }
     result : object
-}
-
-export interface IComment extends Document {
-    productId : ObjectId
-    senderId : ObjectId
-    text : string
-    replies? : {
-        userId : ObjectId
-        text : string
-        fullName : string
-        profilePic : string
-    }[]
-    likes? : ObjectId[]
 }
