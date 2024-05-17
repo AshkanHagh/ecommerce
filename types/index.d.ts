@@ -1,4 +1,4 @@
-import type { request } from 'express';
+import type { request, Response } from 'express';
 import type { Document, ObjectId } from 'mongoose';
 import type { JwtPayload } from 'jsonwebtoken';
 
@@ -106,6 +106,9 @@ declare global {
     namespace Express {
         interface Request {
             user? : IUserModel
+        }
+        interface Response {
+            paginatedResults? : any
         }
     }
 }

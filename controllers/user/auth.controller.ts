@@ -93,7 +93,7 @@ export const logout = CatchAsyncError(async (req : Request, res : Response, next
         res.cookie('access_token', '', {maxAge : 1});
         res.cookie('refresh_token', '', {maxAge : 1});
 
-        redis.del(req.user?._id);
+        redis.del(`user:${req.user?._id}`);
 
         res.status(200).json({message : 'Logged out successfully'});
         
@@ -112,7 +112,7 @@ export const refreshToken = CatchAsyncError(async (req : Request, res : Response
 
         if(!decoded) return next(new ErrorHandler(message, 400));
 
-        const session = await redis.get(decoded.id as string);
+        const session = await redis.get(`user:${decoded.id}` as string);
         if(!session) return next(new ErrorHandler('Please login for access this resources', 400));
 
         const user = JSON.parse(session);
@@ -124,7 +124,7 @@ export const refreshToken = CatchAsyncError(async (req : Request, res : Response
         res.cookie('access_token', accessToken, accessTokenOption);
         res.cookie('refresh_token', refreshToken, refreshTokenOption);
 
-        await redis.set(user._id, JSON.stringify(user), 'EX', 604800) // 7 day
+        redis.set(`user:${user._id}`, JSON.stringify(user), 'EX', 604800); // 7 day
 
         res.status(200).json({accessToken});
 

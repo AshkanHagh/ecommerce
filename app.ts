@@ -5,6 +5,7 @@ import { ErrorMiddleware } from './middlewares/error';
 
 import userRouter from './routes/user.route';
 import productRoute from './routes/product.route';
+import adminRoute from './routes/admin.route';
 
 export const app = express();
 
@@ -17,6 +18,7 @@ app.get('/', (req : Request, res : Response) => res.status(200).json({message : 
 
 app.use('/api/v1/user', userRouter);
 app.use('/api/v1/product', productRoute);
+app.use('/api/v1/admin', adminRoute);
 
 app.get('*', (req : Request, res : Response, next : NextFunction) => {
     const error = new Error(`Route ${req.originalUrl} is not found`);

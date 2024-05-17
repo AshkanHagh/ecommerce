@@ -53,7 +53,7 @@ export const permissionToAdmin = CatchAsyncError(async (req : Request, res : Res
         if(!roleRequest) return next(new ErrorHandler('Role request not found', 400));
 
         const user = await User.findByIdAndUpdate(userId, {$set : {role : 'admin'}});
-        await redis.set(user?._id, JSON.stringify(user), 'EX', 604800);
+        redis.set(`user:${user?._id}`, JSON.stringify(user), 'EX', 604800);
 
         await Role.findOneAndDelete({userId : user?._id});
 
@@ -77,7 +77,7 @@ export const permissionToSeller = CatchAsyncError(async (req : Request, res : Re
         if(!roleRequest) return next(new ErrorHandler('Role request not found', 400));
 
         const user = await User.findByIdAndUpdate(userId, {$set : {role : 'seller'}});
-        await redis.set(user?._id, JSON.stringify(user), 'EX', 604800);
+        redis.set(`user:${user?._id}`, JSON.stringify(user), 'EX', 604800);
 
         await sendEmail({email : user!.email, subject : 'Admin role request', text : 'Your access level has been upgraded to admin', html : `
         <h4>${user!.email}</h4>
@@ -97,7 +97,7 @@ export const rejectRoleRequest = CatchAsyncError(async (req : Request, res : Res
     try {
         const { id : userId } = req.params;
 
-        const result = await redis.get(userId);
+        const result = await redis.get(`user:${userId}`);
         const user = JSON.parse(result!);
 
         const role = await Role.findOneAndDelete({userId : userId});

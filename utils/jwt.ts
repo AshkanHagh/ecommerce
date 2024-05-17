@@ -26,7 +26,7 @@ export const sendToken = (user : IUserModel, statusCode : number, res : Response
 
     const {password, ...others} = user._doc;
 
-    redis.set(user._id, JSON.stringify(others) as string, 'EX', 604800);
+    redis.set(`user:${user._id}`, JSON.stringify(others) as string, 'EX', 604800);
 
     if(process.env.NODE_ENV === 'production') {
         accessTokenOption.secure = true

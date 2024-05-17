@@ -1,29 +1,17 @@
 import { Router } from 'express';
-import protectRoute from '../middlewares/protectRoute';
-import { adminPermission } from '../middlewares/permission';
-import { users, banUser, count, deleteUser } from '../controllers/admin/admin.user';
-import { products, comments, deleteProduct, inventory } from '../controllers/admin/admin.product';
+import { authorizeRoles, isAuthenticated } from '../middlewares/auth';
+import { activeUsers, ban, delSellerAccount, delUsersAccount, users } from '../controllers/admin/admin.user';
 
 const router = Router();
 
-// Users, Admin
-router.get('/users', [protectRoute, adminPermission], users);
+router.get('/user/active', [isAuthenticated, authorizeRoles('admin')], activeUsers);
 
-router.delete('/user/:id', [protectRoute, adminPermission], deleteUser);
+router.get('/user', [isAuthenticated, authorizeRoles('admin')], users);
 
-router.put('/user/ban/:id', [protectRoute, adminPermission], banUser);
+router.patch('/user/ban/:id', [isAuthenticated, authorizeRoles('admin')], ban);
 
-router.get('/count', [protectRoute, adminPermission], count);
+router.delete('/user/del/seller/:id', [isAuthenticated, authorizeRoles('admin')], delSellerAccount);
 
-
-// Products, Admin
-router.get('/product', [protectRoute, adminPermission], products);
-
-router.delete('/product/:id', [protectRoute, adminPermission], deleteProduct);
-
-router.get('/product/comment', [protectRoute, adminPermission], comments);
-
-router.get('/product/inventory', [protectRoute, adminPermission], inventory);
-
+router.delete('/user/del/:id', [isAuthenticated, authorizeRoles('admin')], delUsersAccount);
 
 export default router;

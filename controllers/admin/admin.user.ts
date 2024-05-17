@@ -1,131 +1,161 @@
-import type { NextFunction, Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import User from '../../models/user.model';
-import Product from '../../models/shop/product.model';
-import WishList from '../../models/shop/whishList.model';
+import sendEmail from '../../utils/sendMail';
 import Cart from '../../models/shop/cart.model';
-import Order from '../../models/shop/order.model';
-import Inventory from '../../models/shop/inventory.model';
-import Report from '../../models/report.model';
-import Address from '../../models/address.model';
 import Comment from '../../models/shop/comment.model';
-import type { IPagination, IProduct, IUser } from '../../types';
+import Inventory from '../../models/shop/inventory.model';
+import WishList from '../../models/shop/whishList.model';
+import Product from '../../models/shop/product.model';
+import Address from '../../models/address.model';
+import Report from '../../models/report.model';
+import Role from '../../models/role';
+import { CatchAsyncError } from '../../middlewares/catchAsyncError';
+import ErrorHandler from '../../utils/errorHandler';
+import { redis } from '../../db/redis';
+import type { IPagination } from '../../types';
 
-export const users = async (req : Request, res : Response, next : NextFunction) => {
+export const activeUsers = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
     try {
-        const { page, limit } = req.query;
+        const keys = await redis.keys('user:*');
+        const users = await Promise.all(keys.map(async (key : string) => {
 
-        const NPage = Number(page);
-        const NLimit = Number(limit);
+            const data = await redis.get(key);
+            const user = JSON.parse(data!);
+            return user;
+        }));
 
-        const startIndex = (NPage -1) * NLimit;
-        const endIndex = NPage * NLimit;
+        res.status(200).json({success : true, users});
 
-        const result = <IPagination>{};
-
-        if(endIndex < await User.find().countDocuments().exec()) result.next = { page : NPage + 1, limit : NLimit }
-
-        if(startIndex > 0) result.previous = { page : NPage - 1, limit : NLimit }
-
-        const users : IUser[] | null = await User.find({isAdmin : false}).limit(NLimit).skip(startIndex)
-        .select('-password -isAdmin -token -tokenExpireDate -createdAt -UpdatedAt -__v -profilePic');
-
-        if(!users) return res.status(404).json({error : 'Users not found'});
-
-        res.status(200).json(users);
-
-    } catch (error) {
-
-        next(error);
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
     }
+});
 
-}
-
-export const deleteUser = async (req : Request, res : Response, next : NextFunction) => {
+export const users = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
     try {
-        const { id: userToModify } = req.params;
+        const keys = await redis.keys('user:*');
+        const users = await Promise.all(keys.map(async (key : string) => {
 
-        const user : IUser | null = await User.findById(userToModify);
+            const user = key.slice(5);
+            return user;
+        }));
 
-        if(!user) return res.status(404).json({error : 'User not found'});
+        const user = await User.find();
+        const filteredUsers = user.filter(user => user._id.toString() !== users.toString());
 
-        if(user.isAdmin) return res.status(400).json({error : 'Cannot delete a admin'});
+        res.status(200).json({success : true, filteredUsers});
 
-        if(user.isSeller) {
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
 
-            const products : IProduct[] | null = await Product.find({user : userToModify});
+export const ban = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
-            await Promise.all(products.map(async (product) => {
+    try {
+        const { id : userId } = req.params;
 
-                await WishList.updateMany({}, {$pull : {products : {product : product._id}}});
-                await Cart.updateMany({}, {$pull : {products : {product : product._id}}});
-                await Inventory.deleteMany({productId : product._id});
-            }));
+        const user = await User.findOneAndUpdate({_id : userId, role : ['user', 'seller'], isBan : false}, {$set : {isBan : true}}, {new : true});
 
-            await Comment.updateMany({$pull : {replies : {userId : userToModify}}});
+        if(!user) return next(new ErrorHandler('Error in ban request, check user role not be admin or check user is ban or not', 400));
+        if(user) await redis.del(`user:${user._id}`);
 
-            await Promise.all([Report.updateMany({}, {$pull : {reportersId : userToModify}}), Product.deleteMany({user : userToModify}),
-                User.deleteOne({_id : userToModify}), Address.deleteOne({user : userToModify}), Comment.deleteMany({senderId : userToModify}),
-                    WishList.deleteOne({user : userToModify}), Cart.deleteOne({user : userToModify})]);
+        await sendEmail({
+            email: user.email,
+            subject: 'Your Account Has Been Banned',
+            text: 'Your account has been banned due to a violation of our website policies. If you have any questions or believe this is a mistake, please contact us.',
+            html: `
+              <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+                <h2 style="color: #FF0000;">Your Account Has Been Banned</h2>
+                <p>We regret to inform you that your account has been banned due to a violation of our website policies. This action was taken after careful consideration and review of the infraction.</p>
+                <p>If you have any questions or believe this is a mistake, please contact our support team as soon as possible.</p>
+                <p>Best regards,<br>The Support Team</p>
+              </div>
+            `
+          });
+
+        res.status(200).json({success : true, message : `User ${user.email} has been ban`});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const delSellerAccount = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const { id : userId } = req.params;
+
+        const data = await redis.get(`user:${userId}`);
+        if(data) {
+            const user = JSON.parse(data!);
+            if(user.role === 'admin' || user.role === 'seller') return next(new ErrorHandler('this endpoint is for role seller only', 400));
+            
+        }else {
+            const user = await User.findById(userId);
+            if(user?.role === 'admin' || user?.role === 'seller') return next(new ErrorHandler('this endpoint is for role seller only', 400));
         }
 
-        await Comment.updateMany({$pull : {replies : {userId : userToModify}}});
+        const keys = await redis.keys(`product:*`);
+        const products = await Promise.all(keys.map(async (key : string) => {
 
-        await Promise.all([
-            WishList.deleteMany({user: userToModify}), 
-            Cart.deleteMany({ user: userToModify}), 
-            Report.updateMany({}, {$pull : {reportersId : userToModify}}), 
-            Address.deleteMany({user: userToModify}), 
-            Comment.deleteMany({senderId: userToModify}), 
-            User.deleteOne({_id: userToModify})
+            const data = await redis.get(key);
+            const product = JSON.parse(data!);
+
+            const regex = new RegExp(userId);
+            if(regex.test(product.user)) {
+                const productId = key.slice(8);
+                
+                await Promise.all([Cart.updateMany({}, {$pull : {products : {product : productId}}}), Comment.deleteMany({productId}),
+                    Inventory.deleteMany({productId}), WishList.updateMany({}, {$pull : {products : {product : productId}}}),
+                    Product.deleteMany({_id : productId}), redis.del(`product:${productId}`), redis.del(`comments:${productId}`)
+                ]);
+            }
+        }));
+
+        await Promise.all([Address.deleteMany({user : userId}), Comment.deleteMany({senderId : userId}), 
+            Cart.deleteOne({user : userId}), WishList.deleteOne({user : userId}), Report.updateMany({reportersId : userId}),
+            Role.deleteMany({userId}), redis.del(`user:${userId}`), redis.del(`wishList:${userId}`),
+            Comment.updateMany({replies : {userId}}, {$pull : {replies : {userId}}})
         ]);
 
-        res.status(200).json({message : 'User has been deleted'});
+        await User.deleteOne({_id : userId}),
 
-    } catch (error) {
-        
-        next(error);
+        res.status(200).json({success : true, message : 'User has been deleted successfully'});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
     }
+});
 
-}
-
-
-export const banUser = async (req : Request, res : Response, next : NextFunction) => {
+export const delUsersAccount = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
     try {
-        const { id: userToModify } = req.params;
+        const { id : userId } = req.params;
 
-        const user : IUser | null = await User.findById(userToModify);
+        const data = await redis.get(`user:${userId}`);
+        if(data) {
+            const user = JSON.parse(data!);
+            if(user.role === 'admin' || user.role === 'seller') return next(new ErrorHandler('this endpoint is for role user only', 400));
+            
+        }else {
+            const user = await User.findById(userId);
+            if(user?.role === 'admin' || user?.role === 'seller') return next(new ErrorHandler('this endpoint is for role user only', 400));
+        }
 
-        if(user.isAdmin) return res.status(403).json({error : 'Cannot ban a admin'});
+        await Promise.all([Address.deleteMany({user : userId}), Comment.deleteMany({senderId : userId}), 
+            Cart.deleteOne({user : userId}), WishList.deleteOne({user : userId}), Report.updateMany({reportersId : userId}),
+            Role.deleteMany({userId}), redis.del(`user:${userId}`), redis.del(`wishList:${userId}`),
+            Comment.updateMany({replies : {userId}}, {$pull : {replies : {userId}}}),
+        ]);
 
-        user.isBan = true;
+        await User.deleteOne({_id : userId}),
 
-        await user.save();
+        res.status(200).json({success : true, message : 'User has been deleted successfully'});
 
-        res.status(200).json({message : 'User has been baned'});
-
-    } catch (error) {
-
-        next(error);
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
     }
-
-}
-
-export const count = async (req : Request, res : Response, next : NextFunction) => {
-
-    try {
-        const users = await User.countDocuments();
-        const products = await Product.countDocuments();
-        const reports = await Report.countDocuments();
-        const orders = await Order.countDocuments();
-
-        res.status(200).json({users, products, reports, orders});
-
-    } catch (error) {
-
-        next(error);
-    }
-
-}
+});

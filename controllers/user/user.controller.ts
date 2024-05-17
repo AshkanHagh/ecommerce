@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction } from 'express';
-import { Redis } from 'ioredis';
 import type { IAddressModel, IUpdateInfoBody, IUpdatePasswordBody, IUpdateProfilePic, IUserModel } from '../../types';
 import { CatchAsyncError } from '../../middlewares/catchAsyncError';
 import ErrorHandler from '../../utils/errorHandler';
@@ -39,7 +38,7 @@ export const updateAccountInfo = CatchAsyncError(async (req : Request, res : Res
         user!.birthDay = birthDay || user!.birthDay;
         await user!.save();
 
-        redis.set(user?._id, JSON.stringify(user));
+        redis.set(`user:${user?._id}`, JSON.stringify(user), 'EX', 604800);
 
         res.status(200).json({success : true, user});
 
@@ -151,7 +150,7 @@ export const updateAccountProfilePic = CatchAsyncError(async (req : Request, res
         }
 
         await user?.save();
-        redis.set(user?._id, JSON.stringify(user));
+        redis.set(`user:${user?._id}`, JSON.stringify(user), 'EX', 604800);
 
         res.status(201).json({success : true, profilePic : user?.profilePic});
 
