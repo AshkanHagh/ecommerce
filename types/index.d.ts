@@ -190,15 +190,6 @@ export interface ICommentMap {
     replayText? : string
 }
 
-// export interface ICommentUserMap {
-//     userId : {
-//         _id : IUserModel['_id']
-//         fullName : string
-//         email : string
-//         role : string
-//     }
-// }
-
 export interface IActivationToken {
     token : string
     activationCode : string

@@ -8,6 +8,7 @@ import ZarinpalCheckout from 'zarinpal-checkout';
 import Address from '../../models/address.model';
 import type { IOrderMap, IOrderStatusBody } from '../../types';
 import { redis } from '../../db/redis';
+import sendEmail from '../../utils/sendMail';
 
 let zarinpal = ZarinpalCheckout.create(process.env.MERCHANT_ID as string, true);
 
@@ -76,8 +77,8 @@ export const verifyPayment = CatchAsyncError(async (req : Request, res : Respons
         if(!address) return next(new ErrorHandler('Address not found. please add a address', 400));
 
         const order = await Order.create({
-            user : userId, products: cart.products.map(item => item.product), totalPrice, status : 'pending', address : address._id,
-            paymentRefId : payment.RefID, quantity
+            user : userId, products: cart.products.map(item => item.product), totalPrice : totalPrice.toFixed(2), status : 'pending', 
+            address : address._id, paymentRefId : payment.RefID, quantity
         });
 
         await order.save();
@@ -90,7 +91,21 @@ export const verifyPayment = CatchAsyncError(async (req : Request, res : Respons
             inventory!.availableQuantity -= item.quantity;
     
             await inventory!.save();
-         }
+        }
+        
+        await sendEmail({
+            email: req.user!.email,
+            subject: 'Your Payment was Successful!',
+            text: 'Thank you for your purchase! Your payment was successfully processed.',
+            html: `
+              <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+                <h2 style="color: #4CAF50;">Your Payment was Successful!</h2>
+                <p>Thank you for your purchase! We have received your payment and it has been successfully processed.</p>
+                <p>If you have any questions, please feel free to contact us.</p>
+                <p>Best regards,<br>The Support Team</p>
+              </div>
+            `
+        });
 
         res.status(200).redirect(`http://localhost:7319/api/v1/product/order/payment/detail/${payment.RefID}`);
 
@@ -111,7 +126,7 @@ export const orderDetail = CatchAsyncError(async (req : Request, res : Response,
                 name : product.name, price : product.price, status : order?.status,
                 
             }
-        });
+        });       
 
         res.status(200).json({success : true, detail : {_id : order?._id, totalPrice : order?.totalPrice, 
             quantity : order?.quantity, order : mappedData}});

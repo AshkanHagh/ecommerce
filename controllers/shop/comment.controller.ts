@@ -1,7 +1,7 @@
 import { type Request, type Response, type NextFunction, text } from 'express';
 import { CatchAsyncError } from '../../middlewares/catchAsyncError';
 import ErrorHandler from '../../utils/errorHandler';
-import type { ICommentBody, ICommentMap, IUserModel } from '../../types';
+import type { ICommentBody, ICommentMap, ICommentModel, IUserModel } from '../../types';
 import Comment from '../../models/shop/comment.model';
 import { redis } from '../../db/redis';
 
@@ -36,7 +36,7 @@ export const comments = CatchAsyncError(async (req : Request, res : Response, ne
         }).populate('senderId');
         if(!comments) return next(new ErrorHandler('No comment found. your comment can be first one', 400));
 
-        const comment = comments.map(comments => {
+        const comment = comments.map((comments : ICommentModel) => {
             const { fullName, email, role } = comments.senderId as IUserModel;
 
             const mappedData = comments.replies?.map((comment : ICommentMap) => {
