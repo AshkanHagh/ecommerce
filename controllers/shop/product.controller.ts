@@ -96,6 +96,10 @@ export const singleProduct = CatchAsyncError(async (req : Request, res : Respons
         const data = await redis.get(`product:${productId}`);
         const product = JSON.parse(data!);
 
+        const requestCountKey = `product:requests`;
+        await redis.zincrby(requestCountKey, 1, productId);
+        const requestCount = await redis.zscore(requestCountKey, productId);
+
         res.status(200).json(product);
 
     } catch (error : any) {

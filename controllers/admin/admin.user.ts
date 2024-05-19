@@ -12,7 +12,7 @@ import Role from '../../models/role';
 import { CatchAsyncError } from '../../middlewares/catchAsyncError';
 import ErrorHandler from '../../utils/errorHandler';
 import { redis } from '../../db/redis';
-import type { IPagination } from '../../types';
+import type { ICommentModel, IReportModel } from '../../types';
 
 export const activeUsers = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
@@ -154,6 +154,94 @@ export const delUsersAccount = CatchAsyncError(async (req : Request, res : Respo
         await User.deleteOne({_id : userId}),
 
         res.status(200).json({success : true, message : 'User has been deleted successfully'});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const deleteProduct = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const { id : productId } = req.params;
+
+        await Promise.all([Cart.updateMany({$pull : {products : {product : productId}}}), Comment.deleteMany({productId}), 
+            Inventory.deleteMany({productId}), WishList.updateMany({products : {product : productId}})
+        ]);
+
+        await Product.deleteOne({_id : productId});
+        await redis.del(`product:${productId}`);
+
+        res.status(200).json({success : true, message : 'Product deleted successfully'});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const checkReports = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const keys = await redis.keys(`user:*`);
+        const userId = await Promise.all(keys.map(async (key : string) => {
+
+            const id = key.slice(5);
+            return id;
+        }));
+
+        const reports = await Report.find({user : userId});
+        const report = reports.map((report : IReportModel) => {
+
+            return { _id : report._id, reports : report.reportersId.length, };
+        });
+
+        res.status(200).json({success : true, user : report});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const getTopProducts = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const requestCountKey = `product:requests`;
+        const topProductIds = await redis.zrevrange(requestCountKey, 0, 9, 'WITHSCORES');
+
+        const topProducts = [];
+        // response have 2 value for each item the productId and request number like this 'productId', 50 so each product is 2 item this mean 
+        for(let i = 0; i < topProductIds.length; i += 2) {
+            const productId = topProductIds[i]; // 0 = product1, 2 = product2, 
+            const requestCount = topProductIds[i + 1]; // 1 = product1 request count, 3 = product2 request count
+
+            const data = await redis.get(`product:${productId}`);
+            const product = JSON.parse(data!);
+
+            topProducts.push({requestCount, product});
+        }
+
+        res.status(200).json({success : true, products : topProducts});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const comments = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const comments = await Comment.find().populate('productId senderId');
+
+        const comment = comments.map((comment : ICommentModel) => {
+            const product = comment.productId
+            const user = comment.senderId;
+
+            return {
+                productId : product._id, name : product.name, senderId : user._id, email : user.email, text : comment.text
+            }
+        });
+
+        res.status(200).json({success : true, comment});
 
     } catch (error : any) {
         return next(new ErrorHandler(error.message, 400));

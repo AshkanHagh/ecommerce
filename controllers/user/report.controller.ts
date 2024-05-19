@@ -10,15 +10,18 @@ export const report = CatchAsyncError( async (req : Request, res : Response, nex
         const currentUser = req.user?._id;
 
         let report = await Report.findOne({user : userToModify});
+        if(report?.user.toString() === currentUser) return next(new ErrorHandler('Cannot report yourself', 400));
+
         if(!report) {
 
-            report = await Report.create({user : userToModify});
+            report = new Report({user : userToModify});
+            if(report.user == currentUser) return next(new ErrorHandler('Cannot report yourself', 400));
+
             report.reportersId.push(currentUser);
+            await report.save()
 
             return res.status(200).json({success : true, message : 'User has been reported'});
         }
-
-        if(report.user.toString() === currentUser) return next(new ErrorHandler('Cannot report yourself', 400));
 
         const isReported = report.reportersId.includes(currentUser);
         if(!isReported) {

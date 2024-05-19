@@ -3,7 +3,6 @@ import { login, logout, refreshToken, register, verifyAccount } from '../control
 import { accountInfo, address, addressInfo, updateAccountInfo, updateAccountPassword, 
     updateAccountProfilePic } from '../controllers/user/user.controller';
 import { authorizeRoles, isAuthenticated } from '../middlewares/auth';
-import { checkReport } from '../middlewares/reportChecker';
 import { report } from '../controllers/user/report.controller';
 import { getRoleRequests, permissionToAdmin, permissionToSeller, rejectRoleRequest, roleRequest } from '../controllers/user/role.controller';
 
