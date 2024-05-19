@@ -4,6 +4,7 @@ import ErrorHandler from '../../utils/errorHandler';
 import type { ICommentBody, ICommentMap, ICommentModel, IUserModel } from '../../types';
 import Comment from '../../models/shop/comment.model';
 import { redis } from '../../db/redis';
+import { validateComment } from '../../validation/Joi';
 
 export const createComment = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
@@ -11,6 +12,9 @@ export const createComment = CatchAsyncError(async (req : Request, res : Respons
         const { text } = req.body as ICommentBody;
         const { id : productId } = req.params;
         const senderId = req.user?._id;
+
+        const {error, value} = validateComment(req.body);
+        if(error) return next(new ErrorHandler(error.message, 400));
 
         const comment = await Comment.create({productId, senderId, text});
         res.status(200).json({success : true, comment});
@@ -69,6 +73,9 @@ export const replay = CatchAsyncError(async (req : Request, res : Response,  nex
         const { text } = req.body as ICommentBody;
         const userId = req.user?._id;
 
+        const {error, value} = validateComment(req.body);
+        if(error) return next(new ErrorHandler(error.message, 400));
+
         const comment = await Comment.findByIdAndUpdate(commentId, {$push : {replies : {userId, replayText : text}}}, {new : true});
 
         await redis.set(`comments:${comment?.productId}`, JSON.stringify(comment), 'EX', 86400);
@@ -117,6 +124,9 @@ export const editCommentText = CatchAsyncError(async (req : Request, res : Respo
         const { text } = req.body as ICommentBody;
         const { id : commentId } = req.params;
         const userId = req.user?._id;
+
+        const {error, value} = validateComment(req.body);
+        if(error) return next(new ErrorHandler(error.message, 400));
 
         const comment = await Comment.findOneAndUpdate({_id : commentId, senderId : userId}, {$set : {text}}, {new : true});
         await redis.set(`comments:${comment?.productId}`, JSON.stringify(comment), 'EX', 86400);

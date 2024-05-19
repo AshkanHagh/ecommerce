@@ -107,9 +107,6 @@ declare global {
         interface Request {
             user? : IUserModel
         }
-        interface Response {
-            paginatedResults? : any
-        }
     }
 }
 

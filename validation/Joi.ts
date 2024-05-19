@@ -77,3 +77,16 @@ const updateProductSchema = Joi.object({
 });
 
 export const validateUpdateProduct = validator(updateProductSchema);
+
+const commentSchema = Joi.object({
+    text : Joi.string().required()
+});
+
+export const validateComment = validator(commentSchema);
+
+const roleRequestSchema = Joi.object({
+    message : Joi.string().required(),
+    requestedRole : Joi.string().required()
+});
+
+export const validateRoleBody = validator(roleRequestSchema);

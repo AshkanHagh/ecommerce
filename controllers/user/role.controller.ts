@@ -6,12 +6,16 @@ import Role from '../../models/role';
 import User from '../../models/user.model';
 import { redis } from '../../db/redis';
 import sendEmail from '../../utils/sendMail';
+import { validateRoleBody } from '../../validation/Joi';
 
 export const roleRequest = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
     try {
         const { message, requestedRole } = req.body as IRoleModel;
         const userId = req.user;
+
+        const {error, value} = validateRoleBody(req.body);
+        if(error) return next(new ErrorHandler(error.message, 400));
 
         await Role.create({
             userId, message, requestedRole
