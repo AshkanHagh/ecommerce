@@ -96,7 +96,7 @@ export const singleProduct = CatchAsyncError(async (req : Request, res : Respons
         const data = await redis.get(`product:${productId}`);
         const product = JSON.parse(data!);
 
-        const requestCountKey = `product:requests`;
+        const requestCountKey = `products:requests`;
         await redis.zincrby(requestCountKey, 1, productId);
         const requestCount = await redis.zscore(requestCountKey, productId);
 
@@ -131,6 +131,31 @@ export const editProductInfo = CatchAsyncError(async (req : Request, res : Respo
         await redis.set(`product:${product?._id}`, JSON.stringify(product));
 
         res.status(200).json({success : true, product});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const getTopProducts = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const requestCountKey = `products:requests`;
+        const topProductIds = await redis.zrevrange(requestCountKey, 0, 9, 'WITHSCORES');
+
+        const topProducts = [];
+        // response have 2 value for each item the productId and request number like this 'productId', 50 so each product is 2 item this mean 
+        for(let i = 0; i < topProductIds.length; i += 2) {
+            const productId = topProductIds[i]; // 0 = product1, 2 = product2, 
+            const requestCount = topProductIds[i + 1]; // 1 = product1 request count, 3 = product2 request count
+
+            const data = await redis.get(`product:${productId}`);
+            const product = JSON.parse(data!);
+
+            topProducts.push({requestCount, product});
+        }
+
+        res.status(200).json({success : true, products : topProducts});
 
     } catch (error : any) {
         return next(new ErrorHandler(error.message, 400));

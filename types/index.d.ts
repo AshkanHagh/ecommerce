@@ -102,6 +102,12 @@ export interface ICommentModel extends Document {
     }[]
 }
 
+export interface ILogModel extends Document {
+    admin : IUserModel['_id']
+    modify : string
+    text : string
+}
+
 declare global {
     namespace Express {
         interface Request {
@@ -189,6 +195,22 @@ export interface ICommentMap {
     }
     replayText? : string
 }
+
+// export interface ILogMap extends Document {
+//     admin : {
+//         _id : IUserModel['_id']
+//         email : IUserModel['email']
+//     }
+//     userToModify? : {
+//         _id : IUserModel['_id']
+//         email : IUserModel['email']
+//     }
+//     productToModify? : {
+//         _id : IProductModel['_id']
+//         name : IProductModel['name']
+//     }
+//     text : string
+// }
 
 export interface IActivationToken {
     token : string

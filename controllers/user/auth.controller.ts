@@ -28,9 +28,22 @@ export const register = CatchAsyncError(async (req : Request, res : Response, ne
         const activationToken = createActivationToken(user);
         const activationCode = activationToken.activationCode;
 
-        await sendEmail({email : user.email, subject : 'Activate your account', text : 'Please Past the blow code to active your account', html : `
-        Activation Code is ${activationCode}
-        `});
+        await sendEmail({
+            email: user.email,
+            subject: 'Activate Your Account',
+            text: 'Please use the following code to activate your account: ' + activationCode,
+            html: `
+              <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+                <h2 style="color: #4CAF50;">Activate Your Account</h2>
+                <p>Please use the following code to activate your account:</p>
+                <div style="border: 1px solid #ddd; padding: 10px; font-size: 20px; margin-top: 20px; text-align: center;">
+                  <strong>${activationCode}</strong>
+                </div>
+                <p>If you did not request this code, please ignore this email or contact our support team.</p>
+                <p>Best regards,<br>The Support Team</p>
+              </div>
+            `
+          });
 
         res.status(201).json({success : true, message : 'Please check your email', activationToken : activationToken.token});
 

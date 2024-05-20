@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authorizeRoles, isAuthenticated } from '../middlewares/auth';
-import { createProduct, editProductInfo, products, searchProduct, singleProduct } from '../controllers/shop/product.controller';
+import { createProduct, editProductInfo, getTopProducts, products, searchProduct, singleProduct } from '../controllers/shop/product.controller';
 import { addToWishList, removeWishList, wishList } from '../controllers/shop/wishList.controller';
 import { addToCart, cart, removeCart } from '../controllers/shop/cart.controller';
 import { getPayment, orderDetail, updateOrderStatus, verifyPayment } from '../controllers/shop/order.controller';
@@ -50,10 +50,13 @@ router.post('/', [isAuthenticated, authorizeRoles('seller' || 'admin')], createP
 
 router.get('/', products);
 
+router.get('/top', getTopProducts);
+
 router.get('/search/:query', searchProduct);
 
 router.get('/:id', singleProduct);
 
 router.patch('/:id', [isAuthenticated, authorizeRoles('seller' || 'admin')], editProductInfo);
+
 
 export default router;

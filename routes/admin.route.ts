@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authorizeRoles, isAuthenticated } from '../middlewares/auth';
-import { activeUsers, ban, checkReports, comments, delSellerAccount, delUsersAccount, deleteProduct, getTopProducts, users } from '../controllers/admin/admin.user';
+import { activeUsers, ban, checkReports, comments, delSellerAccount, delUsersAccount, deleteComment, deleteProduct, logs, users } from '../controllers/admin/admin';
 
 const router = Router();
 
@@ -17,11 +17,14 @@ router.delete('/user/del/:id', [isAuthenticated, authorizeRoles('admin')], delUs
 // product
 router.delete('/product/:id', [isAuthenticated, authorizeRoles('admin')], deleteProduct);
 
-router.get('/product/top', [isAuthenticated, authorizeRoles('admin')], getTopProducts);
-
 router.get('/product/comment', [isAuthenticated, authorizeRoles('admin')], comments);
+
+router.delete('/product/comment/:id', [isAuthenticated, authorizeRoles('admin')], deleteComment);
 
 // report
 router.get('/report', [isAuthenticated, authorizeRoles('admin')], checkReports);
+
+// logs
+router.get('/log', [isAuthenticated, authorizeRoles('admin')], logs);
 
 export default router;

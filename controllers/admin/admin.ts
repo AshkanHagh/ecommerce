@@ -43,9 +43,9 @@ export const users = CatchAsyncError(async (req : Request, res : Response, next 
         }));
 
         const user = await User.find();
-        const filteredUsers = user.filter(user => user._id.toString() !== users.toString());
+        const filteredUsers = user.filter(user => user._id.toString() !== users.toString() && user.role !== 'admin');
 
-        res.status(200).json({success : true, filteredUsers});
+        res.status(200).json({success : true, users : filteredUsers});
 
     } catch (error : any) {
         return next(new ErrorHandler(error.message, 400));
@@ -60,7 +60,7 @@ export const ban = CatchAsyncError(async (req : Request, res : Response, next : 
         const user = await User.findOneAndUpdate({_id : userId, role : ['user', 'seller'], isBan : false}, {$set : {isBan : true}}, {new : true});
 
         if(!user) return next(new ErrorHandler('Error in ban request, check user role not be admin or check user is ban or not', 400));
-        if(user) await redis.del(`user:${user._id}`);
+        await redis.del(`user:${user._id}`);
 
         await sendEmail({
             email: user.email,
@@ -75,6 +75,9 @@ export const ban = CatchAsyncError(async (req : Request, res : Response, next : 
               </div>
             `
           });
+
+        const logMessage = `Admin ${req.user?._id} banded user with email ${user.email}`;
+        await redis.rpush(`admin:${req.user?._id}:logs`, logMessage);
 
         res.status(200).json({success : true, message : `User ${user.email} has been ban`});
 
@@ -121,8 +124,10 @@ export const delSellerAccount = CatchAsyncError(async (req : Request, res : Resp
             Comment.updateMany({replies : {userId}}, {$pull : {replies : {userId}}})
         ]);
 
-        await User.deleteOne({_id : userId}),
-
+        const user = await User.findOneAndDelete({_id : userId});
+        const logMessage = `Admin ${req.user?._id} deleted user with email ${user?.email}`;
+        await redis.rpush(`admin:${req.user?._id}:logs`, logMessage);
+        
         res.status(200).json({success : true, message : 'User has been deleted successfully'});
 
     } catch (error : any) {
@@ -151,7 +156,7 @@ export const delUsersAccount = CatchAsyncError(async (req : Request, res : Respo
             Comment.updateMany({replies : {userId}}, {$pull : {replies : {userId}}}),
         ]);
 
-        await User.deleteOne({_id : userId}),
+        const user = await User.findOneAndUpdate({_id : userId});
 
         res.status(200).json({success : true, message : 'User has been deleted successfully'});
 
@@ -169,8 +174,11 @@ export const deleteProduct = CatchAsyncError(async (req : Request, res : Respons
             Inventory.deleteMany({productId}), WishList.updateMany({products : {product : productId}})
         ]);
 
-        await Product.deleteOne({_id : productId});
+        const product = await Product.findOneAndDelete({_id : productId});
         await redis.del(`product:${productId}`);
+
+        const logMessage = `Admin ${req.user?._id} deleted product ${product?.name}`;
+        await redis.rpush(`admin:${req.user?._id}:logs`, logMessage);
 
         res.status(200).json({success : true, message : 'Product deleted successfully'});
 
@@ -202,31 +210,6 @@ export const checkReports = CatchAsyncError(async (req : Request, res : Response
     }
 });
 
-export const getTopProducts = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
-
-    try {
-        const requestCountKey = `product:requests`;
-        const topProductIds = await redis.zrevrange(requestCountKey, 0, 9, 'WITHSCORES');
-
-        const topProducts = [];
-        // response have 2 value for each item the productId and request number like this 'productId', 50 so each product is 2 item this mean 
-        for(let i = 0; i < topProductIds.length; i += 2) {
-            const productId = topProductIds[i]; // 0 = product1, 2 = product2, 
-            const requestCount = topProductIds[i + 1]; // 1 = product1 request count, 3 = product2 request count
-
-            const data = await redis.get(`product:${productId}`);
-            const product = JSON.parse(data!);
-
-            topProducts.push({requestCount, product});
-        }
-
-        res.status(200).json({success : true, products : topProducts});
-
-    } catch (error : any) {
-        return next(new ErrorHandler(error.message, 400));
-    }
-});
-
 export const comments = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
 
     try {
@@ -237,12 +220,42 @@ export const comments = CatchAsyncError(async (req : Request, res : Response, ne
             const user = comment.senderId;
 
             return {
-                productId : product._id, name : product.name, senderId : user._id, email : user.email, text : comment.text
+                commentId : comment._id, productId : product._id, name : product.name, senderId : user._id, 
+                email : user.email, text : comment.text
             }
         });
 
         res.status(200).json({success : true, comment});
 
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const deleteComment = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const { id : commentId } = req.params;
+        const comment = await Comment.findOneAndDelete({_id : commentId});
+
+        const logMessage = `Admin ${req.user?._id} deleted comment from product ${comment?.productId}`;
+        await redis.rpush(`admin:${req.user?._id}:logs`, logMessage);
+
+        res.status(200).json({success : true, message : 'Comment deleted successfully'});
+
+    } catch (error : any) {
+        return next(new ErrorHandler(error.message, 400));
+    }
+});
+
+export const logs = CatchAsyncError(async (req : Request, res : Response, next : NextFunction) => {
+
+    try {
+        const adminId = req.user?._id;
+        const logs = await redis.lrange(`admin:${adminId}:logs`, 0, -1);
+
+        res.status(200).json({success : true, logs});
+        
     } catch (error : any) {
         return next(new ErrorHandler(error.message, 400));
     }
