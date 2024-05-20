@@ -1,36 +1,40 @@
-# E-commerce REST API With [Bun](https://bun.sh/), [Express](https://expressjs.com/), [MongoDB](https://www.mongodb.com/), [TypeScript](https://www.typescriptlang.org/)
+# E-commerce REST API
 
-<img src="./uploads/e-commerce.png" max-width="100%"/>
+![E-commerce](https://res.cloudinary.com/dsrw0xhxw/image/upload/v1716214430/Images/rfyg95f7wv49jwkzhatf.png)
 
-### [Demo](https://ecommerce-0111.onrender.com/api/v1/product) using Render
+## Introduction
 
-### Features :
+This is a comprehensive E-commerce REST API built with modern technologies including [Bun](https://bun.sh/), [Express](https://expressjs.com/), [MongoDB](https://www.mongodb.com/), and [TypeScript](https://www.typescriptlang.org/). It provides a robust backend infrastructure for managing various aspects of an online store.
 
-* [Bun](https://bun.sh/) as runtime
-* [JsonWebToken](https://jwt.io/) based Authentication
-* AccessToken & RefreshToken
-* Data validation with [joi](https://joi.dev/)
-* Product CRUD
-* Product search & using [Redis](https://avatar-placeholder.iran.liara.run/)
-* Product filtering with category using Redis
-* Cart & WishList
-* Limited Product Quantity
-* Order [payment](https://www.zarinpal.com/) gateway and Order status
-* Website emails using [nodemailer](https://www.nodemailer.com/)
-* Comment CRUD & Replay
-* Report User and Ban
-* User profile
-* Request for roles Admin | Seller
-* Admin Dashboard
-* `Redis as second database & session storage and cache`
-* Cloudinary for upload images
+## Demo
 
-### Description 
-E-commerce Rest API, Technologies i use : Typescript, Bun, MongoDB, Express Redis, js libraries i use : bcrypt, cookie-parser, JWT, mongoose, nodemailer, joi, cloud image storage : cloudinary, payment : [zarinpal](https://www.zarinpal.com/),
-### Install packages
+Check out the [demo](https://ecommerce-0111.onrender.com/api/v1/product) deployed using Render.
+
+## Features
+
+- **Runtime**: Utilizes [Bun](https://bun.sh/) as the runtime environment.
+- **Authentication**: Implements JWT-based authentication with AccessToken & RefreshToken.
+- **Data Validation**: Ensures data integrity and security through validation with [joi](https://joi.dev/).
+- **Product Management**: Enables CRUD operations for products and provides search and filtering functionalities.
+- **Cart & Wishlist**: Allows users to manage their shopping cart and wishlist.
+- **Order Management**: Facilitates order processing, including payment gateway integration with [Zarinpal](https://www.zarinpal.com/).
+- **Email Notifications**: Sends automated emails for various events using [nodemailer](https://nodemailer.com/).
+- **User Management**: Enables user profile management, role requests, and admin functionalities.
+- **Security & Logging**: Implements user reporting, banning, and admin logs for enhanced security.
+- **Secondary Database & Caching**: Utilizes Redis as a secondary database for caching and session management, improving performance and scalability.
+
+
+## Description
+
+This E-commerce REST API is a powerful solution for building scalable and feature-rich online stores. It leverages TypeScript for type safety and expressiveness, MongoDB for flexible data storage, and Redis for caching and session management. Additionally, it integrates with various third-party services including Cloudinary for image storage and Zarinpal for payment processing.
+
+## Installation
+
+### Install Dependencies
+
 ```shell
-npm install -g bun # install bun runtime
-bun install # install all dependencies
+npm install -g bun <OR> powershell -c "irm bun.sh/install.ps1 | iex"
+bun install # install project dependencies
 ```
 ### Setup .env file
 ``` shell
@@ -62,4 +66,4 @@ bun run dev # run with --watch mode
 bun start
 ```
 
-<i>Ashkan<i>
+<i>Written by Ashkan.<i>
